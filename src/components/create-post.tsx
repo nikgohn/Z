@@ -36,7 +36,13 @@ const formSchema = z.object({
   );
 
 async function uploadToImgBB(file: File): Promise<string | null> {
-  const apiKey = '806efc635481539064a3411065214009';
+  const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+
+  if (!apiKey) {
+    console.error('ImgBB API key is not configured. Please set NEXT_PUBLIC_IMGBB_API_KEY in your environment variables.');
+    return null;
+  }
+  
   const formData = new FormData();
   formData.append('image', file);
 
@@ -113,7 +119,7 @@ export function CreatePost() {
           } else {
             toast({
               title: 'Ошибка загрузки изображения',
-              description: 'При загрузке изображения произошла ошибка. Пожалуйста, попробуйте еще раз.',
+              description: 'При загрузке изображения произошла ошибка. Пожалуйста, проверьте конфигурацию ключа API и попробуйте еще раз.',
               variant: 'destructive',
             });
             return; // Stop the submission
