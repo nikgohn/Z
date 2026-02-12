@@ -48,6 +48,7 @@ function CommentList({ postId }: { postId: string }) {
   const { user } = useUser();
   const commentsQuery = useMemoFirebase(() => {
     if (!firestore || !postId || !user) return null;
+    // Re-adding orderBy, assuming the necessary Firestore index has been created.
     return query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
   }, [postId, firestore, user]);
 
