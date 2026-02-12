@@ -7,40 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useFirestore } from "@/firebase";
-import { doc, getDoc } from "firebase/firestore";
 
-export function PostView({ post }: { post: Post }) {
-    const firestore = useFirestore();
-    const [author, setAuthor] = React.useState<UserProfile | null>(null);
-
-    React.useEffect(() => {
-        const fetchAuthor = async () => {
-            if (post.userId && firestore) {
-                try {
-                    const userDoc = await getDoc(doc(firestore, 'users', post.userId));
-                    if (userDoc.exists()) {
-                        const data = userDoc.data();
-                        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString();
-                        
-                        const userProfile: UserProfile = {
-                            id: userDoc.id,
-                            nickname: data.nickname,
-                            profilePictureUrl: data.profilePictureUrl,
-                            createdAt: createdAt,
-                            followingUserIds: data.followingUserIds || [],
-                            followerUserIds: data.followerUserIds || [],
-                        };
-                        setAuthor(userProfile);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch post author:", error);
-                }
-            }
-        };
-        fetchAuthor();
-    }, [post.userId, firestore]);
-
+export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrl = post.mediaUrls && post.mediaUrls[0];
     const mediaType = post.mediaTypes && post.mediaTypes[0];
 

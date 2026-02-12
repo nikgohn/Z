@@ -98,7 +98,7 @@ export function PostCard({ post }: { post: Post }) {
                 </div>
             </DialogTrigger>
             <DialogContent className="p-0 border-0 max-w-4xl bg-transparent shadow-none">
-                 <PostView post={post} />
+                 <PostView post={post} author={author} />
             </DialogContent>
         </Dialog>
     );
