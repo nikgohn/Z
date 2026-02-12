@@ -3,29 +3,20 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isSignedIn() {
-      return request.auth != null;
+    // Это правило разрешает доступ ко ВСЕМ документам в базе
+    // И ко ВСЕМ их подпапкам (комментарии внутри постов и т.д.)
+    match /{document=**} {
+      // Разрешаем чтение и запись, если пользователь залогинен
+      allow read, write: if request.auth != null;
     }
-
-    match /users/{userId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
+    
+    // Отдельное правило для постов и юзеров, чтобы их могли видеть даже анонимы (если нужно)
     match /posts/{postId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
-      // Explicitly allow updates for likes by any signed-in user
-      allow update: if isSignedIn();
-      
-      match /comments/{commentId} {
-        allow list, get: if isSignedIn() && exists(/databases/$(database)/documents/posts/$(postId));
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      }
+       allow read: if true;
+       // Разрешаем доступ к комментариям внутри поста для всех залогиненных
+       match /comments/{commentId} {
+         allow read, write: if request.auth != null;
+       }
     }
   }
 }
