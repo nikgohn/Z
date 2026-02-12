@@ -12,9 +12,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import * as React from "react";
 import { useAuth } from "./auth-provider";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, updateDoc, increment, collection, query, orderBy, addDoc, serverTimestamp, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, increment, collection, query, orderBy, addDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import { useState } from "react";
@@ -88,7 +87,6 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
   const { user, userProfile } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -121,7 +119,6 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
       
       setCommentText('');
       toast({ title: 'Комментарий опубликован!' });
-      router.refresh();
     } catch (error: any) {
       toast({
         title: 'Ошибка публикации комментария',
@@ -167,7 +164,6 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
     const { user } = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const router = useRouter();
     const commentInputRef = React.useRef<HTMLTextAreaElement>(null);
 
     const [post, setPost] = React.useState(initialPost);
@@ -192,12 +188,11 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
 
         setIsLiking(true);
         const postRef = doc(firestore, 'posts', post.id);
-        const likeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
         const wasLiked = isLikedByCurrentUser;
         
         setPost(currentPost => ({
             ...currentPost,
-            likesCount: wasLiked ? (currentPost.likesCount || 1) - 1 : (currentPost.likesCount || 0) + 1,
+            likesCount: wasLiked ? Math.max(0, (currentPost.likesCount || 1) - 1) : (currentPost.likesCount || 0) + 1,
             likes: wasLiked
                 ? currentPost.likes?.filter(uid => uid !== user.uid)
                 : [...(currentPost.likes || []), user.uid],
@@ -205,13 +200,16 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
 
         try {
             if (wasLiked) {
-                await deleteDoc(likeRef);
-                await updateDoc(postRef, { likesCount: increment(-1) });
+                await updateDoc(postRef, { 
+                    likes: arrayRemove(user.uid),
+                    likesCount: increment(-1) 
+                });
             } else {
-                await setDoc(likeRef, { userId: user.uid, postId: post.id, createdAt: serverTimestamp() });
-                await updateDoc(postRef, { likesCount: increment(1) });
+                await updateDoc(postRef, { 
+                    likes: arrayUnion(user.uid),
+                    likesCount: increment(1) 
+                });
             }
-            router.refresh();
         } catch (error) {
             setPost(initialPost); 
             toast({

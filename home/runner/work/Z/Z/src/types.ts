@@ -19,7 +19,7 @@ export type Post = {
   updatedAt: string;
   likesCount: number;
   commentCount: number;
-  // This is a client-side convenience, not in Firestore typically
+  // Array of user UIDs who liked the post.
   likes?: string[];
 };
 

@@ -131,6 +131,8 @@ export function CreatePost() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           likesCount: 0,
+          likes: [],
+          commentCount: 0,
         };
 
         await setDoc(doc(firestore, 'posts', postId), postData);

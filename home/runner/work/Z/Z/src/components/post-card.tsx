@@ -12,16 +12,14 @@ import { PostView } from "./post-view";
 import { Heart } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc, updateDoc, increment, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 
 export function PostCard({ post }: { post: Post }) {
     const [open, setOpen] = React.useState(false);
     const { user } = useAuth();
     const { toast } = useToast();
-    const router = useRouter();
     const firestore = useFirestore();
     const [author, setAuthor] = React.useState<UserProfile | null>(null);
     const [isLiking, setIsLiking] = React.useState(false);
@@ -79,30 +77,24 @@ export function PostCard({ post }: { post: Post }) {
         if (isLiking) return;
 
         setIsLiking(true);
-        const likeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
         const postRef = doc(firestore, 'posts', post.id);
         const wasLiked = optimisticLiked;
 
         setOptimisticLiked(!wasLiked);
-        setOptimisticLikeCount(prevCount => wasLiked ? prevCount - 1 : prevCount + 1);
+        setOptimisticLikeCount(prevCount => wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
 
         try {
             if (wasLiked) {
                 await updateDoc(postRef, {
+                    likes: arrayRemove(user.uid),
                     likesCount: increment(-1)
                 });
-                await deleteDoc(likeRef);
             } else {
                 await updateDoc(postRef, {
+                    likes: arrayUnion(user.uid),
                     likesCount: increment(1)
                 });
-                await setDoc(likeRef, {
-                    userId: user.uid,
-                    postId: post.id,
-                    createdAt: serverTimestamp()
-                });
             }
-            router.refresh();
         } catch (error) {
             setOptimisticLiked(wasLiked);
             setOptimisticLikeCount(post.likesCount || 0);
