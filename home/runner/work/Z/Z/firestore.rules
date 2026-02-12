@@ -3,29 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    function isSignedIn() {
-      return request.auth != null;
+    // Allow everything for any authenticated user
+    // The {document=**} wildcard covers all collections and subcollections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
-
-    match /users/{userId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update, write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    match /posts/{postId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
-      // Explicitly allow updates for likes by any signed-in user
-      allow update: if isSignedIn();
-      
-      match /comments/{commentId} {
-        allow list, get: if isSignedIn() && exists(/databases/$(database)/documents/posts/$(postId));
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
-      }
-    }
+    
+    // Allow public read access for posts and user profiles
+    // This overrides the general write rule for read operations on these paths
+    match /posts/{post} { allow read: if true; }
+    match /users/{user} { allow read: if true; }
   }
 }
