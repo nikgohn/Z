@@ -15,7 +15,7 @@ import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "fire
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post: initialPost }: { post: Post }) {
     const [open, setOpen] = React.useState(false);
     const { user } = useUser();
     const { toast } = useToast();
@@ -23,16 +23,22 @@ export function PostCard({ post }: { post: Post }) {
     const [author, setAuthor] = React.useState<UserProfile | null>(null);
     const [isLiking, setIsLiking] = React.useState(false);
 
+    // Internal state for the post to manage optimistic updates
+    const [post, setPost] = React.useState(initialPost);
+
+    // Sync internal state if the prop changes
+    React.useEffect(() => {
+        setPost(initialPost);
+    }, [initialPost]);
+
     React.useEffect(() => {
         const fetchAuthor = async () => {
-            if (post.userId && firestore && user) {
+            if (post.userId && firestore) {
                 try {
                     const userDoc = await getDoc(doc(firestore, 'users', post.userId));
                     if (userDoc.exists()) {
                         const data = userDoc.data();
-                        const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-                            ? data.createdAt.toDate().toISOString()
-                            : new Date().toISOString();
+                        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString();
                         
                         const userProfile: UserProfile = {
                             id: userDoc.id,
@@ -50,17 +56,9 @@ export function PostCard({ post }: { post: Post }) {
             }
         };
         fetchAuthor();
-    }, [post.userId, firestore, user]);
+    }, [post.userId, firestore]);
 
     const isLikedByCurrentUser = user ? post.likes?.includes(user.uid) : false;
-    const [optimisticLiked, setOptimisticLiked] = React.useState(isLikedByCurrentUser);
-    const [optimisticLikeCount, setOptimisticLikeCount] = React.useState(post.likesCount || 0);
-
-    React.useEffect(() => {
-        const liked = user ? post.likes?.includes(user.uid) : false;
-        setOptimisticLiked(liked);
-        setOptimisticLikeCount(post.likesCount || 0);
-    }, [post.likes, post.likesCount, user]);
 
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -77,10 +75,16 @@ export function PostCard({ post }: { post: Post }) {
 
         setIsLiking(true);
         const postRef = doc(firestore, 'posts', post.id);
-        const wasLiked = optimisticLiked;
-
-        setOptimisticLiked(!wasLiked);
-        setOptimisticLikeCount(prevCount => wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+        
+        // Optimistic UI update
+        const wasLiked = isLikedByCurrentUser;
+        setPost(currentPost => ({
+            ...currentPost,
+            likesCount: wasLiked ? Math.max(0, (currentPost.likesCount || 1) - 1) : (currentPost.likesCount || 0) + 1,
+            likes: wasLiked
+                ? currentPost.likes?.filter(uid => uid !== user.uid)
+                : [...(currentPost.likes || []), user.uid],
+        }));
 
         try {
             if (wasLiked) {
@@ -95,8 +99,8 @@ export function PostCard({ post }: { post: Post }) {
                 });
             }
         } catch (error) {
-            setOptimisticLiked(wasLiked);
-            setOptimisticLikeCount(post.likesCount || 0);
+            // Revert optimistic update on error
+            setPost(initialPost);
             toast({
                 title: "Ошибка",
                 description: "Не удалось обновить статус лайка. Пожалуйста, попробуйте еще раз.",
@@ -107,7 +111,7 @@ export function PostCard({ post }: { post: Post }) {
             setIsLiking(false);
         }
     };
-
+    
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a')) {
@@ -162,8 +166,8 @@ export function PostCard({ post }: { post: Post }) {
                                     </p>
                                 </div>
                                  <button onClick={handleLikeClick} disabled={isLiking} className="flex items-center gap-1.5 text-muted-foreground flex-shrink-0 p-1 rounded-full hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <Heart className={cn("h-5 w-5 transition-colors", optimisticLiked && "fill-red-500 text-red-500")} />
-                                    <span className="text-sm font-medium">{optimisticLikeCount}</span>
+                                    <Heart className={cn("h-5 w-5 transition-colors", isLikedByCurrentUser && "fill-red-500 text-red-500")} />
+                                    <span className="text-sm font-medium">{post.likesCount || 0}</span>
                                 </button>
                             </div>
                         )}

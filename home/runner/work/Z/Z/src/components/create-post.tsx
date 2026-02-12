@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { firebaseConfig } from '@/firebase/config';
+import { Post } from '@/types';
 
 const formSchema = z.object({
     caption: z.string().optional(),
@@ -36,7 +38,13 @@ const formSchema = z.object({
   );
 
 async function uploadToImgBB(file: File): Promise<string | null> {
-  const apiKey = '806efc635481539064a3411065214009';
+  const apiKey = firebaseConfig.imgbbKey;
+
+  if (!apiKey) {
+    console.error('ImgBB API key is not configured in firebase/config.ts');
+    return null;
+  }
+  
   const formData = new FormData();
   formData.append('image', file);
 
@@ -113,7 +121,7 @@ export function CreatePost() {
           } else {
             toast({
               title: 'Ошибка загрузки изображения',
-              description: 'При загрузке изображения произошла ошибка. Пожалуйста, попробуйте еще раз.',
+              description: 'При загрузке изображения произошла ошибка. Пожалуйста, проверьте конфигурацию ключа API и попробуйте еще раз.',
               variant: 'destructive',
             });
             return; // Stop the submission
@@ -122,10 +130,11 @@ export function CreatePost() {
 
         const postId = doc(collection(firestore, 'posts')).id;
         
-        const postData: any = {
+        // Use a strongly typed object and initialize all fields
+        const postData: Omit<Post, 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
           id: postId,
           userId: userProfile.id,
-          caption: values.caption,
+          caption: values.caption || "",
           mediaUrls: imageUrl ? [imageUrl] : [],
           mediaTypes: mediaType ? [mediaType] : [],
           createdAt: serverTimestamp(),

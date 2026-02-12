@@ -45,21 +45,18 @@ function PostMedia({ mediaUrl, mediaType }: { mediaUrl?: string; mediaType?: str
 
 function CommentList({ postId }: { postId: string }) {
   const firestore = useFirestore();
-  const { user } = useUser();
   const commentsQuery = useMemoFirebase(() => {
-    if (!firestore || !postId || !user) return null;
-    // We removed orderBy to prevent the Firestore index error.
-    // We will sort the comments on the client-side instead.
+    if (!firestore || !postId) return null;
+    // Query without ordering to prevent Firestore index errors.
+    // Sorting will be handled on the client-side.
     return query(collection(firestore, 'posts', postId, 'comments'));
-  }, [postId, firestore, user]);
+  }, [postId, firestore]);
 
   const { data: comments, isLoading } = useCollection<Comment>(commentsQuery);
 
+  // Sort comments on the client side to ensure correct order
   const sortedComments = React.useMemo(() => {
-    if (!comments) {
-      return [];
-    }
-    // Sort comments by creation date, oldest first.
+    if (!comments) return [];
     return [...comments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [comments]);
 
@@ -95,7 +92,7 @@ function CommentList({ postId }: { postId: string }) {
   );
 }
 
-const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({ postId }, ref) => {
+const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string, onCommentAdded: () => void }>(({ postId, onCommentAdded }, ref) => {
   const { user, userProfile } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -125,11 +122,13 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
         authorPhotoURL: userProfile.profilePictureUrl,
       });
 
-      await updateDoc(postRef, {
+      // This is not awaited to feel faster, but can be awaited if consistency is critical
+      updateDoc(postRef, {
         commentCount: increment(1)
       });
       
       setCommentText('');
+      onCommentAdded(); // Notify parent to update count
       toast({ title: 'Комментарий опубликован!' });
     } catch (error: any) {
       toast({
@@ -189,11 +188,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
     
     const handleLikeClick = async () => {
         if (!user || !firestore) {
-            toast({
-                title: "Требуется аутентификация",
-                description: "Вы должны быть авторизованы, чтобы ставить лайки.",
-                variant: "destructive",
-            });
+            toast({ title: "Требуется аутентификация", variant: "destructive" });
             return;
         }
         if (isLiking) return;
@@ -202,6 +197,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
         const postRef = doc(firestore, 'posts', post.id);
         const wasLiked = isLikedByCurrentUser;
         
+        // Optimistic UI update
         setPost(currentPost => ({
             ...currentPost,
             likesCount: wasLiked ? Math.max(0, (currentPost.likesCount || 1) - 1) : (currentPost.likesCount || 0) + 1,
@@ -223,16 +219,20 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
                 });
             }
         } catch (error) {
+            // Revert on error
             setPost(initialPost); 
-            toast({
-                title: "Ошибка",
-                description: "Не удалось обновить статус лайка. Пожалуйста, попробуйте еще раз.",
-                variant: "destructive",
-            });
+            toast({ title: "Ошибка", description: "Не удалось обновить статус лайка.", variant: "destructive" });
             console.error("Error updating like status:", error);
         } finally {
             setIsLiking(false);
         }
+    };
+
+    const handleCommentAdded = () => {
+        setPost(currentPost => ({
+            ...currentPost,
+            commentCount: (currentPost.commentCount || 0) + 1
+        }));
     };
 
     const postedAt = post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что';
@@ -275,7 +275,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
                     </div>
                     
                     <div className="border-t pt-6 mt-6">
-                        <CommentForm postId={post.id} ref={commentInputRef} />
+                        <CommentForm postId={post.id} ref={commentInputRef} onCommentAdded={handleCommentAdded} />
                         <CommentList postId={post.id} />
                     </div>
                 </div>

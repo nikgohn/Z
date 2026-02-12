@@ -14,13 +14,14 @@ service cloud.firestore {
       // Anyone can read posts.
       allow read: if true;
 
-      // Only the post's author can create or delete it.
-      // Creating a post requires checking the incoming data (request.resource).
+      // The author can create their own post.
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-
-      // Any authenticated user can update a post (e.g., for liking).
+      
+      // Any authenticated user can update a post (for liking).
       allow update: if request.auth != null;
+
+      // Only the author can delete their post.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
 
       // Rules for the 'comments' subcollection
       match /comments/{commentId} {
