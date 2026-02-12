@@ -129,17 +129,14 @@ export function CreatePost() {
 
         const postId = doc(collection(firestore, 'posts')).id;
         
-        const postData: any = {
+        const postData = {
           id: postId,
           userId: userProfile.id,
-          caption: values.caption,
+          caption: values.caption || "",
           mediaUrls: imageUrl ? [imageUrl] : [],
           mediaTypes: mediaType ? [mediaType] : [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          likesCount: 0,
-          likes: [],
-          commentCount: 0,
         };
 
         await setDoc(doc(firestore, 'posts', postId), postData);

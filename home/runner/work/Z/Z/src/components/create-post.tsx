@@ -24,7 +24,6 @@ import { useFirestore } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { firebaseConfig } from '@/firebase/config';
-import { Post } from '@/types';
 
 const formSchema = z.object({
     caption: z.string().optional(),
@@ -130,8 +129,7 @@ export function CreatePost() {
 
         const postId = doc(collection(firestore, 'posts')).id;
         
-        // Use a strongly typed object and initialize all fields
-        const postData: Omit<Post, 'createdAt' | 'updatedAt'> & { createdAt: any, updatedAt: any } = {
+        const postData = {
           id: postId,
           userId: userProfile.id,
           caption: values.caption || "",
@@ -139,9 +137,6 @@ export function CreatePost() {
           mediaTypes: mediaType ? [mediaType] : [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          likesCount: 0,
-          likes: [],
-          commentCount: 0,
         };
 
         await setDoc(doc(firestore, 'posts', postId), postData);

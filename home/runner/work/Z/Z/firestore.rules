@@ -9,25 +9,14 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Rules for posts and their subcollections
+    // Rules for posts
     match /posts/{postId} {
       // Anyone can read posts.
       allow read: if true;
-
-      // The author can create their own post.
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       
-      // Any authenticated user can update a post (for liking).
-      allow update: if request.auth != null;
-
-      // Only the author can delete their post.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
-
-      // Rules for the 'comments' subcollection
-      match /comments/{commentId} {
-        // Any authenticated user can read or write comments.
-        allow read, write: if request.auth != null;
-      }
+      // Only the post's author can create, update, or delete it.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
