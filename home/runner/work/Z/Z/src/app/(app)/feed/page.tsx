@@ -14,10 +14,8 @@ export default function FeedPage() {
         return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
     }, [firestore]);
 
-    // Use <any> here because the raw data from Firestore contains Timestamps, not strings
     const { data: postsFromHook, isLoading } = useCollection<any>(postsQuery);
 
-    // Convert timestamps to ISO strings to match the Post type
     const posts: Post[] | null = postsFromHook
         ? postsFromHook.map(post => {
             const data = post;

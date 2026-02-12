@@ -51,11 +51,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .finally(() => {
           setProfileLoading(false);
         });
-    } else if (!user) {
+    } else if (!isAuthLoading) { // check isAuthLoading to prevent resetting profile on initial load
       setUserProfile(null);
       setProfileLoading(false);
     }
-  }, [user, firestore]);
+  }, [user, firestore, isAuthLoading]);
 
   const loading = isAuthLoading || isProfileLoading;
 

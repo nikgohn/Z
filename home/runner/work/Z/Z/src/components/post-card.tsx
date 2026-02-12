@@ -29,22 +29,26 @@ export function PostCard({ post }: { post: Post }) {
     React.useEffect(() => {
         const fetchAuthor = async () => {
             if (post.userId && firestore) {
-                const userDoc = await getDoc(doc(firestore, 'users', post.userId));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-                        ? data.createdAt.toDate().toISOString()
-                        : new Date().toISOString();
-                    
-                    const userProfile: UserProfile = {
-                        id: userDoc.id,
-                        nickname: data.nickname,
-                        profilePictureUrl: data.profilePictureUrl,
-                        createdAt: createdAt,
-                        followingUserIds: data.followingUserIds,
-                        followerUserIds: data.followerUserIds,
-                    };
-                    setAuthor(userProfile);
+                try {
+                    const userDoc = await getDoc(doc(firestore, 'users', post.userId));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
+                            ? data.createdAt.toDate().toISOString()
+                            : new Date().toISOString();
+                        
+                        const userProfile: UserProfile = {
+                            id: userDoc.id,
+                            nickname: data.nickname,
+                            profilePictureUrl: data.profilePictureUrl,
+                            createdAt: createdAt,
+                            followingUserIds: data.followingUserIds || [],
+                            followerUserIds: data.followerUserIds || [],
+                        };
+                        setAuthor(userProfile);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch post author:", error);
                 }
             }
         };
@@ -101,7 +105,7 @@ export function PostCard({ post }: { post: Post }) {
             router.refresh();
         } catch (error) {
             setOptimisticLiked(wasLiked);
-            setOptimisticLikeCount(post.likesCount);
+            setOptimisticLikeCount(post.likesCount || 0);
             toast({
                 title: "Ошибка",
                 description: "Не удалось обновить статус лайка. Пожалуйста, попробуйте еще раз.",
@@ -154,7 +158,7 @@ export function PostCard({ post }: { post: Post }) {
                         )}
                         {author && (
                             <div className="flex items-center gap-3 mt-auto">
-                                <Link href={`/profile/${author.nickname}`} className="flex-shrink-0">
+                                <Link href={`/profile/${author.nickname}`} className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                                      <Avatar className="h-8 w-8">
                                         <AvatarImage src={author.profilePictureUrl ?? undefined} />
                                         <AvatarFallback>{author.nickname[0].toUpperCase()}</AvatarFallback>

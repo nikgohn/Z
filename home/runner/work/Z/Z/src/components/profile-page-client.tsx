@@ -24,6 +24,7 @@ export default function ProfilePageClient({ nickname }: { nickname: string }) {
         };
 
         const getUserByNickname = async (nick: string): Promise<UserProfile | null> => {
+            if (!firestore) return null;
             const usersRef = collection(firestore, 'users');
             const q = query(usersRef, where('nickname', '==', nick), limit(1));
             const querySnapshot = await getDocs(q);
@@ -43,6 +44,7 @@ export default function ProfilePageClient({ nickname }: { nickname: string }) {
         }
 
         const getPostsByUser = async (userId: string): Promise<Post[]> => {
+            if (!firestore) return [];
             const postsRef = collection(firestore, 'posts');
             const q = query(postsRef, where('userId', '==', userId));
             const querySnapshot = await getDocs(q);
