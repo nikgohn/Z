@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
 import { UserProfile, Post } from "@/types";
-import { collection, getDocs, query, where, limit, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { PostCard } from "@/components/post-card";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +30,8 @@ async function getUserByNickname(nickname: string): Promise<UserProfile | null> 
 
 async function getPostsByUser(userId: string): Promise<Post[]> {
     const postsRef = collection(db, 'posts');
-    const q = query(postsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    // We remove the orderBy clause to avoid the composite index requirement.
+    const q = query(postsRef, where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     const posts = querySnapshot.docs.map(doc => {
         const data = doc.data();
@@ -47,6 +48,9 @@ async function getPostsByUser(userId: string): Promise<Post[]> {
             updatedAt: updatedAt,
         } as Post;
     });
+
+    // We sort the posts on the client-side after fetching them.
+    posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return posts;
 }
@@ -136,7 +140,7 @@ export default function ProfilePageClient({ nickname }: { nickname: string }) {
                     </Avatar>
                     <div className="flex-grow">
                         <h1 className="text-2xl font-bold">{user.nickname}</h1>
-                        <div className="flex gap-4 text-muted-foreground mt-2">
+                        <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-2">
                             <span><span className="font-bold text-foreground">{posts.length}</span> Публикации</span>
                             <span><span className="font-bold text-foreground">{followerCount}</span> Подписчики</span>
                             <span><span className="font-bold text-foreground">{followingCount}</span> Подписки</span>
