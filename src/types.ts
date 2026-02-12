@@ -10,7 +10,7 @@ export type UserProfile = {
 };
 
 export type Post = {
-  id: string;
+  id:string;
   userId: string;
   caption: string;
   mediaUrls: string[];

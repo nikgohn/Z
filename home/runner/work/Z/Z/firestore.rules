@@ -1,8 +1,31 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Explicitly allow updates for likes by any signed-in user
+      allow update: if isSignedIn();
+      
+      match /comments/{commentId} {
+        allow list, get: if isSignedIn() && exists(/databases/$(database)/documents/posts/$(postId));
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
     }
   }
 }
