@@ -1,16 +1,18 @@
 'use client';
 
 import { PostCard } from "@/components/post-card";
-import { useCollection, useMemoFirebase } from "@/firebase";
-import { db } from "@/lib/firebase";
+import { useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { Post } from "@/types";
 import { collection, orderBy, query } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FeedPage() {
+    const firestore = useFirestore();
+
     const postsQuery = useMemoFirebase(() => {
-        return query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-    }, []);
+        if (!firestore) return null;
+        return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
 
     // Use <any> here because the raw data from Firestore contains Timestamps, not strings
     const { data: postsFromHook, isLoading } = useCollection<any>(postsQuery);

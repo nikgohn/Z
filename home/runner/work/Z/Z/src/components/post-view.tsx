@@ -6,17 +6,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Heart, MessageCircle, Download, Link as LinkIcon, Loader2, User } from "lucide-react";
+import { Heart, MessageCircle, Loader2, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import * as React from "react";
 import { useAuth } from "./auth-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc, arrayUnion, arrayRemove, increment, collection, query, orderBy, addDoc, serverTimestamp, setDoc, deleteDoc } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { doc, updateDoc, increment, collection, query, orderBy, addDoc, serverTimestamp, setDoc, deleteDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
-import { useCollection, useMemoFirebase } from "@/firebase";
 import { Textarea } from "./ui/textarea";
 import { useState } from "react";
 
@@ -46,10 +45,11 @@ function PostMedia({ mediaUrl, mediaType }: { mediaUrl?: string; mediaType?: str
 }
 
 function CommentList({ postId }: { postId: string }) {
+  const firestore = useFirestore();
   const commentsQuery = useMemoFirebase(() => {
-    if (!db || !postId) return null;
-    return query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
-  }, [postId]);
+    if (!firestore || !postId) return null;
+    return query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
+  }, [postId, firestore]);
 
   const { data: comments, isLoading } = useCollection<Comment>(commentsQuery);
 
@@ -86,6 +86,7 @@ function CommentList({ postId }: { postId: string }) {
 
 const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({ postId }, ref) => {
   const { user, userProfile } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [commentText, setCommentText] = useState('');
@@ -93,7 +94,7 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !firestore) {
       toast({ title: 'Вы должны быть авторизованы, чтобы комментировать.', variant: 'destructive' });
       return;
     }
@@ -102,8 +103,8 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
     setIsSubmitting(true);
 
     try {
-      const postRef = doc(db, 'posts', postId);
-      const commentsColRef = collection(db, 'posts', postId, 'comments');
+      const postRef = doc(firestore, 'posts', postId);
+      const commentsColRef = collection(firestore, 'posts', postId, 'comments');
       
       await addDoc(commentsColRef, {
         postId: postId,
@@ -164,6 +165,7 @@ CommentForm.displayName = 'CommentForm';
 
 export function PostView({ post: initialPost, author }: { post: Post, author: UserProfile | null }) {
     const { user } = useAuth();
+    const firestore = useFirestore();
     const { toast } = useToast();
     const router = useRouter();
     const commentInputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -178,7 +180,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
     const isLikedByCurrentUser = user ? post.likes?.includes(user.uid) : false;
     
     const handleLikeClick = async () => {
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 title: "Требуется аутентификация",
                 description: "Вы должны быть авторизованы, чтобы ставить лайки.",
@@ -189,13 +191,13 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
         if (isLiking) return;
 
         setIsLiking(true);
-        const postRef = doc(db, 'posts', post.id);
-        const likeRef = doc(db, 'posts', post.id, 'likes', user.uid);
+        const postRef = doc(firestore, 'posts', post.id);
+        const likeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
         const wasLiked = isLikedByCurrentUser;
         
         setPost(currentPost => ({
             ...currentPost,
-            likesCount: wasLiked ? currentPost.likesCount - 1 : currentPost.likesCount + 1,
+            likesCount: wasLiked ? (currentPost.likesCount || 1) - 1 : (currentPost.likesCount || 0) + 1,
             likes: wasLiked
                 ? currentPost.likes?.filter(uid => uid !== user.uid)
                 : [...(currentPost.likes || []), user.uid],
@@ -254,7 +256,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
                     <div className="mt-4 flex items-center gap-4 text-muted-foreground border-t pt-4">
                         <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={handleLikeClick} disabled={isLiking}>
                             <Heart className={cn("h-5 w-5 transition-colors", isLikedByCurrentUser && "fill-red-500 text-red-500")} />
-                            <span>{post.likesCount}</span>
+                            <span>{post.likesCount || 0}</span>
                         </Button>
                         <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => commentInputRef.current?.focus()}>
                             <MessageCircle className="h-5 w-5" />

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { PostView } from "./post-view";
 import { Heart } from "lucide-react";
 import { useAuth } from "./auth-provider";
-import { db } from "@/lib/firebase";
+import { useFirestore } from "@/firebase";
 import { doc, getDoc, updateDoc, increment, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -22,13 +22,14 @@ export function PostCard({ post }: { post: Post }) {
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+    const firestore = useFirestore();
     const [author, setAuthor] = React.useState<UserProfile | null>(null);
     const [isLiking, setIsLiking] = React.useState(false);
 
     React.useEffect(() => {
         const fetchAuthor = async () => {
-            if (post.userId) {
-                const userDoc = await getDoc(doc(db, 'users', post.userId));
+            if (post.userId && firestore) {
+                const userDoc = await getDoc(doc(firestore, 'users', post.userId));
                 if (userDoc.exists()) {
                     const data = userDoc.data();
                     const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
@@ -48,7 +49,7 @@ export function PostCard({ post }: { post: Post }) {
             }
         };
         fetchAuthor();
-    }, [post.userId]);
+    }, [post.userId, firestore]);
 
     const isLikedByCurrentUser = user ? post.likes?.includes(user.uid) : false;
     const [optimisticLiked, setOptimisticLiked] = React.useState(isLikedByCurrentUser);
@@ -63,7 +64,7 @@ export function PostCard({ post }: { post: Post }) {
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 title: "Требуется аутентификация",
                 description: "Вы должны быть авторизованы, чтобы ставить лайки.",
@@ -74,8 +75,8 @@ export function PostCard({ post }: { post: Post }) {
         if (isLiking) return;
 
         setIsLiking(true);
-        const likeRef = doc(db, 'posts', post.id, 'likes', user.uid);
-        const postRef = doc(db, 'posts', post.id);
+        const likeRef = doc(firestore, 'posts', post.id, 'likes', user.uid);
+        const postRef = doc(firestore, 'posts', post.id);
         const wasLiked = optimisticLiked;
 
         setOptimisticLiked(!wasLiked);
