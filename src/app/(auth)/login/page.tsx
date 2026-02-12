@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { 
   GoogleAuthProvider, 
-  signInWithRedirect, 
-  getRedirectResult, 
+  signInWithPopup,
   onAuthStateChanged 
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -15,28 +14,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function LoginPage() {
   const router = useRouter();
-  // Начинаем с состояния загрузки, чтобы предотвратить мигание кнопки входа
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Сначала мы вызываем getRedirectResult, чтобы инициировать обработку результата перенаправления.
-    // Нам не нужно использовать результат напрямую, так как onAuthStateChanged отреагирует на успешный вход.
-    getRedirectResult(auth)
-      .catch((error) => {
-        // Здесь будут перехвачены ошибки из потока перенаправления.
-        console.error("Ошибка входа при редиректе:", error);
-      });
-
-    // Затем мы устанавливаем слушатель, который будет реагировать на ЛЮБОЕ изменение состояния аутентификации.
-    // Он сработает при загрузке страницы, а также после того, как getRedirectResult успешно аутентифицирует пользователя.
+    // Этот слушатель - единственный источник правды о состоянии авторизации.
+    // Он сработает, как только Firebase определит, есть ли пользователь.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Если объект user существует, вход успешен. Перенаправляем в приложение.
-        // Мы остаемся в состоянии "загрузки" на этой странице, потому что собираемся ее покинуть.
+        // Если пользователь есть, перенаправляем в ленту.
         router.replace('/feed');
       } else {
-        // Если пользователя нет, значит, мы не вошли в систему.
-        // Теперь можно безопасно показать кнопку входа.
+        // Если пользователя нет, можно безопасно показать кнопку входа.
         setLoading(false);
       }
     });
@@ -45,17 +33,22 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleLogin = () => {
-    setLoading(true); // Показываем экран загрузки, пока перенаправляемся на Google
+  const handleLogin = async () => {
+    setLoading(true); // Показываем загрузку, пока открыто всплывающее окно
     const provider = new GoogleAuthProvider();
-    // Принудительно запрашиваем выбор аккаунта, чтобы избежать автоматического входа в зацикленном состоянии.
-    provider.setCustomParameters({ prompt: 'select_account' }); 
-    signInWithRedirect(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+      // После успешного входа onAuthStateChanged выше обработает перенаправление.
+    } catch (error) {
+      console.error("Ошибка входа через Google Popup:", error);
+      // Если всплывающее окно закрыто или произошла другая ошибка, снова показываем кнопку входа.
+      setLoading(false);
+    }
   };
 
   // Пока проверяется состояние аутентификации, показываем сообщение о загрузке.
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Загрузка соцсети Z...</div>;
+    return <div className="flex h-screen items-center justify-center">Проверяем статус авторизации...</div>;
   }
   
   // Как только мы узнаем, что пользователь не вошел, показываем интерфейс входа.
@@ -74,7 +67,6 @@ export default function LoginPage() {
             variant="outline"
             className="w-full font-semibold"
             onClick={handleLogin}
-            disabled={loading}
           >
             <GoogleIcon className="mr-2 h-5 w-5" />
             Войти через Google
