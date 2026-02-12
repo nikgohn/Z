@@ -1,22 +1,8 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Это правило разрешает доступ ко ВСЕМ документам в базе
-    // И ко ВСЕМ их подпапкам (комментарии внутри постов и т.д.)
     match /{document=**} {
-      // Разрешаем чтение и запись, если пользователь залогинен
-      allow read, write: if request.auth != null;
-    }
-    
-    // Отдельное правило для постов и юзеров, чтобы их могли видеть даже анонимы (если нужно)
-    match /posts/{postId} {
-       allow read: if true;
-       // Разрешаем доступ к комментариям внутри поста для всех залогиненных
-       match /comments/{commentId} {
-         allow read, write: if request.auth != null;
-       }
+      allow read, write: if true;
     }
   }
 }
