@@ -11,7 +11,6 @@
  * - /users/{userId}: User-owned profiles, readable by other signed-in users.
  * - /posts/{postId}: Publicly readable posts, with write access restricted to the original author.
  * - /posts/{postId}/comments/{commentId}: Publicly readable comments for a post.
- * - /posts/{postId}/likes/{likeId}: Publicly readable likes, with write access restricted to the user who created the like.
  * - /chats/{chatId}: Private chat conversations, accessible only to users listed in the participantIds array.
  * - /chats/{chatId}/messages/{messageId}: Messages within a chat, inheriting access controls from the parent chat.
  *
@@ -26,13 +25,6 @@
  * - **Shared Access for Chats**: Access to chats and their subcollections is managed by a participantIds array on
  *   the parent /chats/{chatId} document. This avoids complex role management and provides a clear, auditable
  *   line of authorization.
- *
- * ## Denormalization for Authorization
- * To ensure performant and simple security rules, this ruleset relies on denormalized data:
- * - /posts/{postId}: Contains a userId field to verify ownership without needing to look up other documents.
- * - /chats/{chatId}: Contains a participantIds array. Rules on its /messages subcollection perform a get()
- *   on the parent chat document to verify the requesting user is a current participant. This is a secure and
- *   necessary read operation to protect the entire subcollection.
  *
  */
 rules_version = '2';
@@ -62,8 +54,6 @@ service cloud.firestore {
     function isExistingDoc() {
       return resource != null;
     }
-
-
 
     /**
      * Combines ownership check with an existence check for secure updates/deletes.
@@ -159,23 +149,6 @@ service cloud.firestore {
       allow create: if isChatParticipant(chatId) && request.resource.data.senderId == request.auth.uid && request.resource.data.chatId == chatId;
       allow update: if isExistingOwner(resource.data.senderId) && isChatParticipant(chatId);
       allow delete: if isExistingOwner(resource.data.senderId) && isChatParticipant(chatId);
-    }
-
-    /**
-     * @description Rules for the Likes subcollection on a post.
-     * @path /posts/{postId}/likes/{likeId}
-     * @allow (list) Any user, including anonymous ones, can see who liked a post.
-     * @allow (create) An authenticated user creates a like, where the document ID and userId field match their own UID.
-     * @deny (create) A user tries to create a like on behalf of another user.
-     * @deny (update) A like document cannot be updated after creation.
-     * @principle Enforces public read access with strict document ownership for writes.
-     */
-    match /posts/{postId}/likes/{likeId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isOwner(likeId) && request.resource.data.userId == request.auth.uid && request.resource.data.postId == postId;
-      allow update: if false;
-      allow delete: if isExistingOwner(resource.data.userId);
     }
     
     /**

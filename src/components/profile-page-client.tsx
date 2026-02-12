@@ -2,72 +2,71 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/firebase";
 import { UserProfile, Post } from "@/types";
 import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { PostCard } from "@/components/post-card";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-
-async function getUserByNickname(nickname: string): Promise<UserProfile | null> {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('nickname', '==', nickname), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
-    }
-    const doc = querySnapshot.docs[0];
-    const data = doc.data();
-    const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-        ? data.createdAt.toDate().toISOString()
-        : new Date().toISOString();
-    return {
-        ...data,
-        id: doc.id,
-        createdAt: createdAt,
-    } as UserProfile;
-}
-
-async function getPostsByUser(userId: string): Promise<Post[]> {
-    const postsRef = collection(db, 'posts');
-    // We remove the orderBy clause to avoid the composite index requirement.
-    const q = query(postsRef, where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
-    const posts = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-            ? data.createdAt.toDate().toISOString()
-            : new Date().toISOString();
-        const updatedAt = data.updatedAt && typeof data.updatedAt.toDate === 'function'
-            ? data.updatedAt.toDate().toISOString()
-            : new Date().toISOString();
-        return {
-            ...data,
-            id: doc.id,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-        } as Post;
-    });
-
-    // We sort the posts on the client-side after fetching them.
-    posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    return posts;
-}
-
+import { useFirestore, useUser } from "@/firebase";
 
 export default function ProfilePageClient({ nickname }: { nickname: string }) {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [userFound, setUserFound] = useState(true);
+    const firestore = useFirestore();
+    const { user: authUser } = useUser();
 
     useEffect(() => {
-        if (!nickname) {
+        if (!nickname || !firestore || !authUser) {
             setLoading(false);
-            setUserFound(false);
+            if (!nickname) setUserFound(false);
             return;
         };
+
+        const getUserByNickname = async (nick: string): Promise<UserProfile | null> => {
+            if (!firestore) return null;
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, where('nickname', '==', nick), limit(1));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                return null;
+            }
+            const doc = querySnapshot.docs[0];
+            const data = doc.data();
+            const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
+                ? data.createdAt.toDate().toISOString()
+                : new Date().toISOString();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: createdAt,
+            } as UserProfile;
+        }
+
+        const getPostsByUser = async (userId: string): Promise<Post[]> => {
+            if (!firestore) return [];
+            const postsRef = collection(firestore, 'posts');
+            const q = query(postsRef, where('userId', '==', userId));
+            const querySnapshot = await getDocs(q);
+            const posts = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
+                    ? data.createdAt.toDate().toISOString()
+                    : new Date().toISOString();
+                const updatedAt = data.updatedAt && typeof data.updatedAt.toDate === 'function'
+                    ? data.updatedAt.toDate().toISOString()
+                    : new Date().toISOString();
+                return {
+                    ...data,
+                    id: doc.id,
+                    createdAt: createdAt,
+                    updatedAt: updatedAt,
+                } as Post;
+            });
+            posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return posts;
+        }
 
         const fetchData = async () => {
             setLoading(true);
@@ -85,7 +84,7 @@ export default function ProfilePageClient({ nickname }: { nickname: string }) {
 
         fetchData();
 
-    }, [nickname]);
+    }, [nickname, firestore, authUser]);
 
 
     if (loading) {

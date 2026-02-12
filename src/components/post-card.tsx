@@ -10,44 +10,47 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { PostView } from "./post-view";
 import { Heart } from "lucide-react";
-import { useAuth } from "./auth-provider";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, increment, setDoc, deleteDoc } from "firebase/firestore";
+import { useFirestore, useUser } from "@/firebase";
+import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 
 export function PostCard({ post }: { post: Post }) {
     const [open, setOpen] = React.useState(false);
-    const { user } = useAuth();
+    const { user } = useUser();
     const { toast } = useToast();
-    const router = useRouter();
+    const firestore = useFirestore();
     const [author, setAuthor] = React.useState<UserProfile | null>(null);
+    const [isLiking, setIsLiking] = React.useState(false);
 
     React.useEffect(() => {
         const fetchAuthor = async () => {
-            if (post.userId) {
-                const userDoc = await getDoc(doc(db, 'users', post.userId));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-                        ? data.createdAt.toDate().toISOString()
-                        : new Date().toISOString();
-                    
-                    const userProfile: UserProfile = {
-                        id: userDoc.id,
-                        nickname: data.nickname,
-                        profilePictureUrl: data.profilePictureUrl,
-                        createdAt: createdAt,
-                        followingUserIds: data.followingUserIds,
-                        followerUserIds: data.followerUserIds,
-                    };
-                    setAuthor(userProfile);
+            if (post.userId && firestore && user) {
+                try {
+                    const userDoc = await getDoc(doc(firestore, 'users', post.userId));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
+                            ? data.createdAt.toDate().toISOString()
+                            : new Date().toISOString();
+                        
+                        const userProfile: UserProfile = {
+                            id: userDoc.id,
+                            nickname: data.nickname,
+                            profilePictureUrl: data.profilePictureUrl,
+                            createdAt: createdAt,
+                            followingUserIds: data.followingUserIds || [],
+                            followerUserIds: data.followerUserIds || [],
+                        };
+                        setAuthor(userProfile);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch post author:", error);
                 }
             }
         };
         fetchAuthor();
-    }, [post.userId]);
+    }, [post.userId, firestore, user]);
 
     const isLikedByCurrentUser = user ? post.likes?.includes(user.uid) : false;
     const [optimisticLiked, setOptimisticLiked] = React.useState(isLikedByCurrentUser);
@@ -62,7 +65,7 @@ export function PostCard({ post }: { post: Post }) {
     const handleLikeClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 title: "Требуется аутентификация",
                 description: "Вы должны быть авторизованы, чтобы ставить лайки.",
@@ -70,39 +73,38 @@ export function PostCard({ post }: { post: Post }) {
             });
             return;
         }
+        if (isLiking) return;
 
-        const likeRef = doc(db, 'posts', post.id, 'likes', user.uid);
-        const postRef = doc(db, 'posts', post.id);
+        setIsLiking(true);
+        const postRef = doc(firestore, 'posts', post.id);
         const wasLiked = optimisticLiked;
 
         setOptimisticLiked(!wasLiked);
-        setOptimisticLikeCount(prevCount => wasLiked ? prevCount - 1 : prevCount + 1);
+        setOptimisticLikeCount(prevCount => wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
 
         try {
             if (wasLiked) {
                 await updateDoc(postRef, {
+                    likes: arrayRemove(user.uid),
                     likesCount: increment(-1)
                 });
-                await deleteDoc(likeRef);
             } else {
                 await updateDoc(postRef, {
+                    likes: arrayUnion(user.uid),
                     likesCount: increment(1)
                 });
-                await setDoc(likeRef, {
-                    userId: user.uid,
-                    createdAt: new Date()
-                });
             }
-            router.refresh();
         } catch (error) {
             setOptimisticLiked(wasLiked);
-            setOptimisticLikeCount(post.likesCount);
+            setOptimisticLikeCount(post.likesCount || 0);
             toast({
                 title: "Ошибка",
                 description: "Не удалось обновить статус лайка. Пожалуйста, попробуйте еще раз.",
                 variant: "destructive",
             });
             console.error("Error updating like status:", error);
+        } finally {
+            setIsLiking(false);
         }
     };
 
@@ -147,7 +149,7 @@ export function PostCard({ post }: { post: Post }) {
                         )}
                         {author && (
                             <div className="flex items-center gap-3 mt-auto">
-                                <Link href={`/profile/${author.nickname}`} className="flex-shrink-0">
+                                <Link href={`/profile/${author.nickname}`} className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                                      <Avatar className="h-8 w-8">
                                         <AvatarImage src={author.profilePictureUrl ?? undefined} />
                                         <AvatarFallback>{author.nickname[0].toUpperCase()}</AvatarFallback>
@@ -159,7 +161,7 @@ export function PostCard({ post }: { post: Post }) {
                                         {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
                                     </p>
                                 </div>
-                                 <button onClick={handleLikeClick} className="flex items-center gap-1.5 text-muted-foreground flex-shrink-0 p-1 rounded-full hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-ring">
+                                 <button onClick={handleLikeClick} disabled={isLiking} className="flex items-center gap-1.5 text-muted-foreground flex-shrink-0 p-1 rounded-full hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
                                     <Heart className={cn("h-5 w-5 transition-colors", optimisticLiked && "fill-red-500 text-red-500")} />
                                     <span className="text-sm font-medium">{optimisticLikeCount}</span>
                                 </button>

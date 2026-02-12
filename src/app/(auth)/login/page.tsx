@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { useAuth as useFirebaseAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
-  onAuthStateChanged
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -16,42 +15,36 @@ import { Terminal } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const auth = useFirebaseAuth();
+  const { user, isUserLoading } = useUser();
+
   const [error, setError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    // This listener handles the core logic: if a user is detected, redirect them.
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, redirect to the feed.
-        router.replace('/feed');
-      } else {
-        // No user, so stop loading and show the login page.
-        setIsLoading(false);
-      }
-    });
-
-    // Cleanup the subscription on component unmount
-    return () => unsubscribe();
-  }, [router]);
+    // Redirect if user is already logged in and auth state is resolved
+    if (!isUserLoading && user) {
+      router.replace('/feed');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleLogin = async () => {
-    setIsLoading(true);
+    if (!auth) return;
+    setIsSigningIn(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // On successful popup, the onAuthStateChanged listener above will trigger the redirect.
+      // The `useEffect` above will handle the redirect once `user` state updates.
     } catch (err: any) {
       console.error("Ошибка входа через Google Popup:", err);
-      // Handle errors like popup closed by user
       setError(err.message || "Ошибка входа. Попробуйте снова.");
-      setIsLoading(false); // Show the login button again
+      setIsSigningIn(false);
     }
   };
 
-  // While checking auth state or after clicking login, show a loading message.
-  if (isLoading) {
+  // While checking auth state, or in the process of signing in, or if user object is present (pre-redirect)
+  if (isUserLoading || isSigningIn || user) {
     return (
       <div className="flex h-screen items-center justify-center">
         Проверяем статус авторизации...
@@ -82,7 +75,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full font-semibold"
             onClick={handleLogin}
-            disabled={isLoading}
+            disabled={isSigningIn}
           >
             <GoogleIcon className="mr-2 h-5 w-5" />
             Войти через Google

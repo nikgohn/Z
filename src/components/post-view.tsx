@@ -6,19 +6,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Heart, MessageCircle, Download, Link as LinkIcon, Loader2, User } from "lucide-react";
+import { Heart, MessageCircle, Loader2, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import * as React from "react";
-import { useAuth } from "./auth-provider";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc, arrayUnion, arrayRemove, increment, collection, query, orderBy, addDoc, serverTimestamp, setDoc, deleteDoc } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { doc, updateDoc, increment, collection, query, orderBy, addDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
 import { cn } from "@/lib/utils";
-import { useCollection, useMemoFirebase } from "@/firebase";
 import { Textarea } from "./ui/textarea";
 import { useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 
 function PostMedia({ mediaUrl, mediaType }: { mediaUrl?: string; mediaType?: string }) {
   if (mediaType === 'image' && mediaUrl) {
@@ -46,10 +44,12 @@ function PostMedia({ mediaUrl, mediaType }: { mediaUrl?: string; mediaType?: str
 }
 
 function CommentList({ postId }: { postId: string }) {
+  const firestore = useFirestore();
+  const { user } = useUser();
   const commentsQuery = useMemoFirebase(() => {
-    if (!db || !postId) return null;
-    return query(collection(db, 'chats', postId, 'messages'), orderBy('createdAt', 'asc'));
-  }, [postId]);
+    if (!firestore || !postId || !user) return null;
+    return query(collection(firestore, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
+  }, [postId, firestore, user]);
 
   const { data: comments, isLoading } = useCollection<Comment>(commentsQuery);
 
@@ -86,14 +86,14 @@ function CommentList({ postId }: { postId: string }) {
 
 const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({ postId }, ref) => {
   const { user, userProfile } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !firestore) {
       toast({ title: 'Вы должны быть авторизованы, чтобы комментировать.', variant: 'destructive' });
       return;
     }
@@ -102,21 +102,24 @@ const CommentForm = React.forwardRef<HTMLTextAreaElement, { postId: string }>(({
     setIsSubmitting(true);
 
     try {
-      // Note: The data model uses /chats/{postId}/messages for comments
-      const commentsColRef = collection(db, 'chats', postId, 'messages');
+      const postRef = doc(firestore, 'posts', postId);
+      const commentsColRef = collection(firestore, 'posts', postId, 'comments');
+      
       await addDoc(commentsColRef, {
-        chatId: postId,
-        senderId: user.uid,
+        postId: postId,
+        userId: user.uid,
         content: commentText.trim(),
         createdAt: serverTimestamp(),
-        // Denormalizing for convenience, though rules might not need it
         authorNickname: userProfile.nickname,
         authorPhotoURL: userProfile.profilePictureUrl,
+      });
+
+      await updateDoc(postRef, {
+        commentCount: increment(1)
       });
       
       setCommentText('');
       toast({ title: 'Комментарий опубликован!' });
-      router.refresh(); // Or optimistic update
     } catch (error: any) {
       toast({
         title: 'Ошибка публикации комментария',
@@ -159,12 +162,13 @@ CommentForm.displayName = 'CommentForm';
 
 
 export function PostView({ post: initialPost, author }: { post: Post, author: UserProfile | null }) {
-    const { user } = useAuth();
+    const { user } = useUser();
+    const firestore = useFirestore();
     const { toast } = useToast();
-    const router = useRouter();
     const commentInputRef = React.useRef<HTMLTextAreaElement>(null);
 
     const [post, setPost] = React.useState(initialPost);
+    const [isLiking, setIsLiking] = React.useState(false);
     
     React.useEffect(() => {
         setPost(initialPost);
@@ -173,7 +177,7 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
     const isLikedByCurrentUser = user ? post.likes?.includes(user.uid) : false;
     
     const handleLikeClick = async () => {
-        if (!user) {
+        if (!user || !firestore) {
             toast({
                 title: "Требуется аутентификация",
                 description: "Вы должны быть авторизованы, чтобы ставить лайки.",
@@ -181,15 +185,15 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
             });
             return;
         }
+        if (isLiking) return;
 
-        const postRef = doc(db, 'posts', post.id);
-        const likeRef = doc(db, 'posts', post.id, 'likes', user.uid);
+        setIsLiking(true);
+        const postRef = doc(firestore, 'posts', post.id);
         const wasLiked = isLikedByCurrentUser;
         
-        // Optimistic update
         setPost(currentPost => ({
             ...currentPost,
-            likesCount: wasLiked ? currentPost.likesCount - 1 : currentPost.likesCount + 1,
+            likesCount: wasLiked ? Math.max(0, (currentPost.likesCount || 1) - 1) : (currentPost.likesCount || 0) + 1,
             likes: wasLiked
                 ? currentPost.likes?.filter(uid => uid !== user.uid)
                 : [...(currentPost.likes || []), user.uid],
@@ -197,15 +201,17 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
 
         try {
             if (wasLiked) {
-                await deleteDoc(likeRef);
-                await updateDoc(postRef, { likesCount: increment(-1) });
+                await updateDoc(postRef, { 
+                    likes: arrayRemove(user.uid),
+                    likesCount: increment(-1) 
+                });
             } else {
-                await setDoc(likeRef, { userId: user.uid, postId: post.id, createdAt: serverTimestamp() });
-                await updateDoc(postRef, { likesCount: increment(1) });
+                await updateDoc(postRef, { 
+                    likes: arrayUnion(user.uid),
+                    likesCount: increment(1) 
+                });
             }
-            router.refresh();
         } catch (error) {
-            // Revert optimistic update on failure
             setPost(initialPost); 
             toast({
                 title: "Ошибка",
@@ -213,6 +219,8 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
                 variant: "destructive",
             });
             console.error("Error updating like status:", error);
+        } finally {
+            setIsLiking(false);
         }
     };
 
@@ -245,9 +253,9 @@ export function PostView({ post: initialPost, author }: { post: Post, author: Us
                     <PostMedia mediaUrl={mediaUrl} mediaType={mediaType} />
                     
                     <div className="mt-4 flex items-center gap-4 text-muted-foreground border-t pt-4">
-                        <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={handleLikeClick}>
+                        <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={handleLikeClick} disabled={isLiking}>
                             <Heart className={cn("h-5 w-5 transition-colors", isLikedByCurrentUser && "fill-red-500 text-red-500")} />
-                            <span>{post.likesCount}</span>
+                            <span>{post.likesCount || 0}</span>
                         </Button>
                         <Button variant="ghost" size="sm" className="flex items-center gap-2" onClick={() => commentInputRef.current?.focus()}>
                             <MessageCircle className="h-5 w-5" />

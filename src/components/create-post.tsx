@@ -20,7 +20,7 @@ import { useTransition, useState } from 'react';
 import { ImageIcon, Loader2, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
@@ -67,6 +67,7 @@ async function uploadToImgBB(file: File): Promise<string | null> {
 
 export function CreatePost() {
   const { user, userProfile } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -94,7 +95,7 @@ export function CreatePost() {
   };
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !firestore) {
         toast({ title: 'Вы должны быть авторизованы, чтобы создать запись.', variant: 'destructive' });
         return;
     };
@@ -119,7 +120,7 @@ export function CreatePost() {
           }
         }
 
-        const postId = doc(collection(db, 'posts')).id;
+        const postId = doc(collection(firestore, 'posts')).id;
         
         const postData: any = {
           id: postId,
@@ -130,9 +131,11 @@ export function CreatePost() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           likesCount: 0,
+          likes: [],
+          commentCount: 0,
         };
 
-        await setDoc(doc(db, 'posts', postId), postData);
+        await setDoc(doc(firestore, 'posts', postId), postData);
 
         toast({ title: 'Запись создана!' });
         setOpen(false);

@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, MessageSquare, User, LogOut } from 'lucide-react';
+import { Home, Search, MessageSquare, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAuth } from './auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { auth } from '@/lib/firebase';
+import { useAuth as useFirebaseAuth } from '@/firebase';
 import { CreatePost } from './create-post';
 import { ZLogoIcon } from './icons';
 
@@ -20,6 +20,7 @@ const navItems = [
 export function MainNav() {
   const pathname = usePathname();
   const { userProfile } = useAuth();
+  const auth = useFirebaseAuth();
 
   return (
     <aside className="flex h-screen w-20 flex-col items-center border-r border-border/50 bg-background py-4">
@@ -71,7 +72,7 @@ export function MainNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => auth.signOut()}
+                onClick={() => auth?.signOut()}
                 className="flex h-12 w-12 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
               >
                 <LogOut className="h-6 w-6" />

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 
 const formSchema = z.object({
@@ -23,6 +23,7 @@ export default function CreateProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,10 +47,10 @@ export default function CreateProfilePage() {
   }, [user, userProfile, loading, router]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         title: 'Ошибка',
-        description: 'Вы не авторизованы.',
+        description: 'Вы не авторизованы или сервис недоступен.',
         variant: 'destructive',
       });
       return;
@@ -57,7 +58,7 @@ export default function CreateProfilePage() {
 
     startTransition(async () => {
       try {
-        const usersRef = collection(db, 'users');
+        const usersRef = collection(firestore, 'users');
         const q = query(usersRef, where('nickname', '==', values.nickname));
         const querySnapshot = await getDocs(q);
 
@@ -79,7 +80,7 @@ export default function CreateProfilePage() {
             followerUserIds: [],
         };
 
-        await setDoc(doc(db, 'users', user.uid), newUserProfile);
+        await setDoc(doc(firestore, 'users', user.uid), newUserProfile);
         
         toast({
           title: 'Успешно!',
