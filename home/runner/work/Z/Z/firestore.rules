@@ -54,6 +54,13 @@ service cloud.firestore {
     function isExistingDoc() {
       return resource != null;
     }
+    
+    /**
+     * Checks if a post exists.
+     */
+    function postExists(postId) {
+      return exists(/databases/$(database)/documents/posts/$(postId));
+    }
 
     /**
      * Combines ownership check with an existence check for secure updates/deletes.
@@ -160,10 +167,10 @@ service cloud.firestore {
      * @principle Enforces public read access for signed-in users with strict document ownership for writes.
      */
     match /posts/{postId}/comments/{commentId} {
-      allow get, list: if isSignedIn();
-      allow create: if isOwner(request.resource.data.userId) && request.resource.data.postId == postId;
-      allow update: if isExistingOwner(resource.data.userId);
-      allow delete: if isExistingOwner(resource.data.userId);
+      allow get, list: if postExists(postId) && isSignedIn();
+      allow create: if postExists(postId) && isOwner(request.resource.data.userId) && request.resource.data.postId == postId;
+      allow update: if postExists(postId) && isExistingOwner(resource.data.userId);
+      allow delete: if postExists(postId) && isExistingOwner(resource.data.userId);
     }
   }
 }

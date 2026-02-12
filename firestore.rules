@@ -54,6 +54,13 @@ service cloud.firestore {
     function isExistingDoc() {
       return resource != null;
     }
+    
+    /**
+     * Checks if a post exists.
+     */
+    function postExists(postId) {
+      return exists(/databases/$(database)/documents/posts/$(postId));
+    }
 
     /**
      * Combines ownership check with an existence check for secure updates/deletes.
@@ -154,17 +161,16 @@ service cloud.firestore {
     /**
      * @description Rules for the Comments subcollection on a post.
      * @path /posts/{postId}/comments/{commentId}
-     * @allow (list) Any user, including anonymous ones, can read comments on a post.
+     * @allow (list) Any signed-in user can read comments on a post.
      * @allow (create) An authenticated user can create a comment.
      * @deny (update) A user tries to update another user's comment.
-     * @principle Enforces public read access with strict document ownership for writes.
+     * @principle Enforces public read access for signed-in users with strict document ownership for writes.
      */
     match /posts/{postId}/comments/{commentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.postId == postId;
-      allow update: if isExistingOwner(resource.data.userId);
-      allow delete: if isExistingOwner(resource.data.userId);
+      allow get, list: if postExists(postId) && isSignedIn();
+      allow create: if postExists(postId) && isOwner(request.resource.data.userId) && request.resource.data.postId == postId;
+      allow update: if postExists(postId) && isExistingOwner(resource.data.userId);
+      allow delete: if postExists(postId) && isExistingOwner(resource.data.userId);
     }
   }
 }
