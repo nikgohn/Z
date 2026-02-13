@@ -165,7 +165,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <div 
                              className={cn(
                                 "relative bg-muted flex items-center justify-center w-full cursor-pointer transition-all duration-300",
-                                imageExpanded ? "h-full" : "h-1/2"
+                                imageExpanded ? "flex-1 min-h-0" : "h-1/2 flex-shrink-0"
                             )}
                             onClick={() => setImageExpanded(!imageExpanded)}
                         >
@@ -180,13 +180,13 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             {mediaType === 'video' && <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />}
                         </div>
                         {!imageExpanded && post.caption && (
-                             <div className="h-1/2 p-4 border-t overflow-y-auto">
+                             <div className="flex-1 p-4 border-t overflow-y-auto min-h-0">
                                 <p className="text-sm text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="h-full flex items-center justify-start p-6 overflow-y-auto">
+                    <div className="h-full flex items-start justify-start p-6 overflow-y-auto">
                         <p className="text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
                     </div>
                 )}
@@ -237,7 +237,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </div>
 
                 {/* 2. Scrollable Comments Area */}
-                <div className="p-4 flex-1 overflow-y-auto">
+                <div className="p-4 flex-1 overflow-y-auto min-h-0">
                     <div className="space-y-4">
                         {commentsLoading && (
                             [...Array(3)].map((_, i) => (
