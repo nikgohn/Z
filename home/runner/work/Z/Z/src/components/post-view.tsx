@@ -255,7 +255,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 </div>
                             </div>
                         ))}
-                         {!commentsLoading && comments.length === 0 && (!mediaUrl || !post.caption) && (
+                         {!commentsLoading && comments.length === 0 && (
                             <p className="text-sm text-muted-foreground text-center py-4">Комментариев пока нет. Будьте первым!</p>
                         )}
                     </div>
