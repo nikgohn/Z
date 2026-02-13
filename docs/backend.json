@@ -102,6 +102,42 @@
         "mediaTypes",
         "createdAt"
       ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a user-generated comment on a post.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Comment entity."
+        },
+        "postId": {
+          "type": "string",
+          "description": "Reference to the Post this comment belongs to."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who created the comment."
+        },
+        "text": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "postId",
+        "userId",
+        "text",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -143,8 +179,28 @@
             }
           ]
         }
+      },
+      {
+        "path": "/posts/{postId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores comments for a specific post. Anyone can read, but only authenticated users can create, and only authors can delete.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The ID of the parent post."
+            },
+            {
+              "name": "commentId",
+              "description": "The unique ID for the comment."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is simplified to only include users and posts. Chat, messages, and likes have been removed. Authorization is handled via security rules, where users can only write to their own profile and posts."
+    "reasoning": "The Firestore structure is simplified to include users, posts, and comments. Authorization is handled via security rules, where users can only write to their own profile and posts/comments."
   }
 }
