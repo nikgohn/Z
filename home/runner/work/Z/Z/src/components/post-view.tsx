@@ -147,34 +147,34 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     return (
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
             
-            {/* ЛЕВАЯ ЧАСТЬ (Контент) - единая прокручиваемая область */}
-            <div className="w-full md:w-1/2 h-full border-r border-border overflow-y-auto custom-scrollbar">
-                {mediaUrl && (
-                    <div className="relative w-full aspect-square bg-muted">
-                        {mediaType === 'image' && (
-                            <Image 
-                                src={mediaUrl} 
-                                alt="Контент" 
-                                fill 
-                                className="object-contain" 
-                                priority
-                            />
-                        )}
-                        {mediaType === 'video' && (
-                            <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                        )}
-                    </div>
-                )}
-                {post.caption && (
-                    <div className="p-6">
-                        <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                            {post.caption}
-                        </p>
-                    </div>
-                )}
+            <div className="w-full md:w-1/2 h-full border-r border-border relative">
+                <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
+                    {mediaUrl && (
+                        <div className="relative w-full aspect-square bg-muted">
+                            {mediaType === 'image' && (
+                                <Image 
+                                    src={mediaUrl} 
+                                    alt="Контент" 
+                                    fill 
+                                    className="object-contain" 
+                                    priority
+                                />
+                            )}
+                            {mediaType === 'video' && (
+                                <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
+                            )}
+                        </div>
+                    )}
+                    {post.caption && (
+                        <div className="p-6">
+                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                                {post.caption}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* ПРАВАЯ ЧАСТЬ (Социалка) - всегда видима */}
             <div className="w-full md:w-1/2 flex flex-col bg-card h-full">
                 <div className="p-4 border-b border-border flex items-start gap-3 bg-muted/20">
                     {author && (
