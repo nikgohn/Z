@@ -172,15 +172,15 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         )}
                     </>
                 ) : (
-                    <div className="h-full flex items-center justify-center p-6 overflow-y-auto">
-                        <p className="text-foreground/90 whitespace-pre-wrap text-center">{post.caption}</p>
+                    <div className="h-full p-6 overflow-y-auto">
+                        <p className="text-foreground/90 whitespace-pre-wrap">{post.caption}</p>
                     </div>
                 )}
             </div>
 
             {/* Right Column */}
             <div className="w-full md:w-1/2 flex flex-col bg-card">
-                {/* 1. Author Header with Likes */}
+                {/* 1. Author Header */}
                 <div className="p-4 border-b">
                     {author ? (
                          <div className="flex items-start gap-3">
@@ -197,9 +197,9 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 <p className="text-xs text-muted-foreground mt-0.5">
                                     {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
                                 </p>
-                                <div className="flex items-center gap-2 pt-2">
+                                 <div className="flex items-center gap-2 pt-2">
                                     <Button variant="ghost" size="icon" className="-ml-2 h-8 w-8" onClick={handleLike}>
-                                        <Heart className={cn("h-5 w-5 transition-colors", isLiked && "fill-destructive text-destructive")} />
+                                        <Heart className={cn("h-5 w-5 transition-colors", isLiked && "fill-primary text-primary")} />
                                     </Button>
                                     <p className="text-sm font-semibold text-muted-foreground">
                                         {likeCount} {getLikeText(likeCount)}
