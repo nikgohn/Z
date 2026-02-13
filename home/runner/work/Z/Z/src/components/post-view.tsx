@@ -149,56 +149,45 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
             
             <div className={cn(
-                "relative h-full border-r border-border bg-background transition-all duration-300 md:w-1/2",
-                isImageExpanded ? "w-full overflow-hidden" : "w-full"
+                "h-full border-r border-border bg-background transition-all duration-300 relative md:w-1/2",
+                isImageExpanded ? "w-full overflow-hidden" : "w-full overflow-y-auto custom-scrollbar"
             )}>
-                {/* Scrollable area for content */}
-                <div className={cn(
-                    "absolute inset-0 overflow-y-auto custom-scrollbar",
-                    isImageExpanded && "hidden" // Hide scroll area when image is expanded
-                )}>
-                    {mediaUrl && (
-                        <div 
-                            className="relative w-full aspect-square bg-muted cursor-pointer"
-                            onClick={() => mediaType === 'image' && setIsImageExpanded(true)}
-                        >
-                            {mediaType === 'image' && (
-                                <Image src={mediaUrl} alt="Контент" fill className="object-contain" priority/>
-                            )}
-                            {mediaType === 'video' && (
-                                <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                            )}
-                        </div>
-                    )}
-                    {post.caption && (
-                        <div className="p-6">
-                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                                {post.caption}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Expanded image view */}
-                {isImageExpanded && mediaUrl && mediaType === 'image' && (
-                     <div 
-                        className="w-full h-full bg-black/50 cursor-pointer flex items-center justify-center"
-                        onClick={() => setIsImageExpanded(false)}
+                {mediaUrl && (
+                    <div 
+                        className={cn(
+                            "relative w-full aspect-square bg-muted",
+                             mediaType === 'image' && "cursor-pointer",
+                             isImageExpanded && "h-full"
+                        )}
+                         onClick={mediaType === 'image' ? () => setIsImageExpanded(!isImageExpanded) : undefined}
                     >
-                        <Image 
-                            src={mediaUrl} 
-                            alt="Контент" 
-                            fill 
-                            className="object-contain" 
-                            priority
-                        />
+                        {mediaType === 'image' && (
+                            <Image 
+                                src={mediaUrl} 
+                                alt="Контент" 
+                                fill 
+                                className="object-contain" 
+                                priority
+                            />
+                        )}
+                        {mediaType === 'video' && (
+                            <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
+                        )}
+                    </div>
+                )}
+
+                {post.caption && !isImageExpanded && (
+                    <div className="p-6">
+                        <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                            {post.caption}
+                        </p>
                     </div>
                 )}
             </div>
 
             <div className={cn(
                 "w-full md:w-1/2 flex flex-col bg-card h-full",
-                isImageExpanded && "hidden" // Hide comments when image is expanded
+                isImageExpanded && "hidden"
             )}>
                 <div className="p-4 border-b border-border flex items-center gap-3 bg-muted/20">
                     {author && (
@@ -207,22 +196,26 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 <AvatarImage src={author.profilePictureUrl || undefined} alt={author.nickname} />
                                 <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1">
+                                    <Link 
+                                        href={`/profile/${author.nickname}`} 
+                                        className="font-bold text-foreground hover:text-primary transition-colors truncate max-w-[150px] md:max-w-none"
+                                    >
                                         @{author.nickname}
                                     </Link>
+                                    
                                     <Button 
                                         variant="ghost" 
-                                        size="default"
+                                        size="sm"
                                         onClick={handleLike} 
                                         className={cn(
-                                            "gap-2 -ml-2",
+                                            "gap-1.5 h-auto py-1 px-2 hover:bg-transparent",
                                             isLiked ? "text-primary" : "text-muted-foreground"
                                         )}
                                     >
-                                        <Heart className={cn("h-6 w-6", isLiked && "fill-current")} />
-                                        <span className="font-mono text-base">{likeCount}</span>
+                                        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
+                                        <span className="font-mono text-sm">{likeCount}</span>
                                     </Button>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest -mt-1">
