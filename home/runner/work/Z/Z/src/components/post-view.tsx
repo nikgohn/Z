@@ -157,7 +157,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     };
 
     return (
-        <div className="flex flex-col md:flex-row max-h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
             {/* Media side */}
             <div className="w-full md:w-1/2 bg-muted flex items-center justify-center overflow-hidden">
                 {mediaType === 'image' && mediaUrl ? (
@@ -167,8 +167,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 ) : mediaType === 'video' && mediaUrl ? (
                     <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
                 ) : (
-                    <div className="p-4 h-full w-full overflow-y-auto">
-                        <p className="text-sm text-foreground break-words">
+                    <div className="p-4 h-full w-full flex items-center justify-center">
+                        <p className="text-foreground break-words text-center">
                             {post.caption}
                         </p>
                     </div>
@@ -216,7 +216,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         </div>
                     )}
 
-                    {(mediaUrl && post.caption && comments.length > 0) && <Separator className="mb-4" />}
+                    {(mediaUrl && post.caption && (comments.length > 0 || commentsLoading)) && <Separator className="mb-4" />}
 
                     <div className="space-y-4">
                         {commentsLoading && (
