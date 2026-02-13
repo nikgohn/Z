@@ -220,15 +220,25 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <button
                             onClick={handleLike}
                             className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-xl border transition-all",
-                            "text-sm font-semibold",
-                            isLiked
-                                ? "bg-primary/10 border-primary/40 text-primary"
-                                : "bg-background border-border text-muted-foreground hover:border-muted-foreground/50"
+                                "flex items-center gap-2 px-2 py-1",
+                                "bg-transparent border-none shadow-none",
+                                "hover:bg-transparent active:bg-transparent",
+                                "focus:outline-none focus-visible:ring-0",
+                                "transition-colors",
+                                isLiked
+                                ? "text-primary"
+                                : "text-muted-foreground hover:text-foreground"
                             )}
-                        >
-                            <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-                            <span>{likeCount}</span>
+                            >
+                            <Heart
+                                className={cn(
+                                "h-5 w-5 transition-colors",
+                                isLiked && "fill-current"
+                                )}
+                            />
+                            <span className="text-sm font-semibold">
+                                {likeCount}
+                            </span>
                         </button>
                         </>
                     )}
