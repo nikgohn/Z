@@ -150,9 +150,13 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             
             <div className={cn(
                 "h-full border-r border-border bg-background transition-all duration-300 relative",
-                isImageExpanded ? "w-full md:w-full" : "w-full md:w-1/2"
+                "w-full md:w-1/2",
+                isImageExpanded && "w-full md:w-full"
             )}>
-                <div className={cn("absolute inset-0 overflow-y-auto custom-scrollbar", isImageExpanded && "hidden")}>
+                <div className={cn(
+                    "absolute inset-0 overflow-y-auto custom-scrollbar",
+                    isImageExpanded && "hidden"
+                )}>
                     {mediaUrl && (
                         <div 
                             className="relative w-full aspect-square bg-muted cursor-pointer"
@@ -195,36 +199,36 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 "w-full md:w-1/2 flex flex-col bg-card h-full",
                 isImageExpanded && "hidden md:flex"
             )}>
-                <div className="p-4 border-b border-border flex items-start gap-3 bg-muted/20">
+                <div className="p-4 border-b border-border flex items-center gap-3 bg-muted/20">
                     {author && (
-                         <div>
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 ring-1 ring-border">
-                                    <AvatarImage src={author.profilePictureUrl || undefined} alt={author.nickname} />
-                                    <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors">
+                        <>
+                            <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
+                                <AvatarImage src={author.profilePictureUrl || undefined} alt={author.nickname} />
+                                <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-grow min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors block truncate">
                                         @{author.nickname}
                                     </Link>
-                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
-                                        {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
-                                    </p>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="default"
+                                        onClick={handleLike} 
+                                        className={cn(
+                                            "gap-2 -ml-2",
+                                            isLiked ? "text-primary" : "text-muted-foreground"
+                                        )}
+                                    >
+                                        <Heart className={cn("h-6 w-6", isLiked && "fill-current")} />
+                                        <span className="font-mono text-base">{likeCount}</span>
+                                    </Button>
                                 </div>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest -mt-1">
+                                    {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
+                                </p>
                             </div>
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={handleLike} 
-                                className={cn(
-                                    "gap-2 -ml-3 mt-1",
-                                    isLiked ? "text-primary" : "text-muted-foreground"
-                                )}
-                            >
-                                <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-                                <span className="font-mono text-sm">{likeCount}</span>
-                            </Button>
-                        </div>
+                        </>
                     )}
                 </div>
 
