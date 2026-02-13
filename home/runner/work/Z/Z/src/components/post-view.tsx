@@ -206,18 +206,16 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                     </p>
                                 </div>
                             </div>
-                            <Button 
-                                variant="ghost" 
-                                size="default"
+                             <button
                                 onClick={handleLike} 
                                 className={cn(
-                                    "gap-2 flex-shrink-0 hover:bg-transparent",
+                                    "inline-flex items-center justify-center gap-2 p-2 rounded-md transition-colors",
                                     isLiked ? "text-primary" : "text-muted-foreground"
                                 )}
                             >
                                 <Heart className={cn("h-6 w-6", isLiked && "fill-current")} />
                                 <span className="font-mono text-base">{likeCount}</span>
-                            </Button>
+                            </button>
                         </>
                     )}
                 </div>
