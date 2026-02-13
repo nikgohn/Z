@@ -147,57 +147,66 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
 
     return (
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
-            
+            {/* Left Column */}
             <div className={cn(
-                "w-full md:w-1/2 h-full flex flex-col border-r border-border relative overflow-hidden transition-[width] duration-300 ease-in-out",
+                "w-full h-full flex flex-col border-r border-border relative overflow-hidden transition-[width] duration-300 ease-in-out",
                 imageExpanded && mediaUrl ? "md:w-full" : "md:w-1/2"
             )}>
-                
-                {mediaUrl && (
-                    <div 
-                        className={cn(
-                            "cursor-pointer transition-all duration-500 ease-in-out bg-black/20 flex items-center justify-center overflow-hidden group",
-                            imageExpanded 
-                                ? "absolute inset-0 z-[100] w-full h-full bg-background/95" 
-                                : "basis-1/2 w-full relative border-b border-border"
-                        )}
-                        onClick={() => setImageExpanded(!imageExpanded)}
-                    >
-                        {mediaType === 'image' && (
-                            <Image 
-                                src={mediaUrl} 
-                                alt="Контент" 
-                                fill 
-                                className={cn(
-                                    "transition-all duration-500", 
-                                    "object-contain"
-                                )} 
-                                priority
-                            />
-                        )}
-                        
-                        <div className="absolute top-4 right-4 bg-background/60 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-[110]">
-                            {imageExpanded ? <Minimize2 className="h-5 w-5"/> : <Maximize2 className="h-5 w-5"/>}
+                {mediaUrl ? (
+                    <div className="flex flex-col h-full">
+                        {/* Media container */}
+                        <div 
+                            className={cn(
+                                "cursor-pointer group relative flex items-center justify-center overflow-hidden bg-black/20 transition-all duration-500",
+                                imageExpanded ? "flex-1" : "h-1/2"
+                            )}
+                            onClick={() => setImageExpanded(!imageExpanded)}
+                        >
+                            {mediaType === 'image' && (
+                                <Image 
+                                    src={mediaUrl} 
+                                    alt="Контент" 
+                                    fill 
+                                    className="object-contain" 
+                                    priority
+                                />
+                            )}
+                             {mediaType === 'video' && (
+                                <video src={mediaUrl} className="w-full h-full object-contain" controls loop playsInline />
+                            )}
+                            <div className="absolute top-4 right-4 bg-background/60 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                {imageExpanded ? <Minimize2 className="h-5 w-5"/> : <Maximize2 className="h-5 w-5"/>}
+                            </div>
+                        </div>
+
+                        {/* Text container */}
+                        <div className={cn(
+                            "p-6 overflow-y-auto bg-background custom-scrollbar",
+                            "h-1/2",
+                            imageExpanded && "hidden"
+                        )}>
+                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                                {post.caption}
+                            </p>
                         </div>
                     </div>
+                ) : (
+                    // Text takes full height if no media
+                    <div className="h-full p-6 overflow-y-auto bg-background custom-scrollbar">
+                         <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                            {post.caption}
+                        </p>
+                    </div>
                 )}
-
-                <div className={cn(
-                    "p-6 overflow-y-auto bg-background custom-scrollbar transition-all",
-                    mediaUrl ? "basis-1/2" : "h-full",
-                    imageExpanded && "opacity-0 pointer-events-none"
-                )}>
-                    <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                        {post.caption}
-                    </p>
-                </div>
             </div>
 
+            {/* Right Column */}
             <div className={cn(
                 "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
-                imageExpanded && mediaUrl ? "opacity-0 pointer-events-none" : "opacity-100"
+                imageExpanded && mediaUrl ? "hidden" : "flex"
             )}>
-                <div className="p-4 border-b border-border flex items-start gap-3 bg-muted/20">
+                {/* Author Info */}
+                 <div className="p-4 border-b border-border flex items-start gap-3 bg-muted/20">
                     {author && (
                          <div>
                             <div className="flex items-center gap-3">
@@ -230,6 +239,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
+
+                {/* Comments */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
                     {commentsLoading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
@@ -253,6 +264,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
+                {/* Comment Input */}
                 {userProfile && (
                     <div className="p-4 bg-muted/10 border-t border-border">
                         <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
