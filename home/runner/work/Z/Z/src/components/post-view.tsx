@@ -15,7 +15,6 @@ import { Button } from "./ui/button";
 import { Heart, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
-import { Skeleton } from "./ui/skeleton";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrl = post.mediaUrls && post.mediaUrls[0];
@@ -124,7 +123,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
 
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !firestore || !newComment.trim()) return;
+        if (!user || !userProfile || !newComment.trim()) return;
 
         setIsSubmittingComment(true);
         try {
@@ -149,7 +148,10 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     return (
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
             
-            <div className="w-full md:w-1/2 h-full flex flex-col border-r border-border relative overflow-hidden">
+            <div className={cn(
+                "w-full h-full flex flex-col border-r border-border relative overflow-hidden transition-[width] duration-300 ease-in-out",
+                imageExpanded && mediaUrl ? "md:w-full" : "md:w-1/2"
+            )}>
                 
                 {mediaUrl && (
                     <div 
@@ -168,7 +170,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 fill 
                                 className={cn(
                                     "transition-all duration-500", 
-                                    imageExpanded ? "object-contain" : "object-cover"
+                                    "object-contain"
                                 )} 
                                 priority
                             />
@@ -192,38 +194,40 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             </div>
 
             <div className={cn(
-                "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
-                imageExpanded ? "opacity-0 pointer-events-none" : "opacity-100"
+                "w-full md:w-1/2 flex-col bg-card h-full transition-opacity duration-300",
+                imageExpanded && mediaUrl ? "hidden" : "flex"
             )}>
-                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+                <div className="p-4 border-b border-border flex items-start gap-3 bg-muted/20">
                     {author && (
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 ring-1 ring-border">
-                                <AvatarImage src={author.profilePictureUrl || undefined} />
-                                <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors">
-                                    @{author.nickname}
-                                </Link>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
-                                    {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
-                                </p>
+                         <div>
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 ring-1 ring-border">
+                                    <AvatarImage src={author.profilePictureUrl || undefined} />
+                                    <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors">
+                                        @{author.nickname}
+                                    </Link>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
+                                        {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
+                                    </p>
+                                </div>
                             </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={handleLike} 
+                                className={cn(
+                                    "gap-2 -ml-3 mt-1",
+                                    isLiked ? "text-primary" : "text-muted-foreground"
+                                )}
+                            >
+                                <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
+                                <span className="font-mono text-sm">{likeCount}</span>
+                            </Button>
                         </div>
                     )}
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleLike} 
-                        className={cn(
-                            "gap-2 rounded-full px-4",
-                            isLiked ? "text-primary" : "text-muted-foreground"
-                        )}
-                    >
-                        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-                        <span className="font-mono text-sm">{likeCount}</span>
-                    </Button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
@@ -240,7 +244,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
-                                        <p className="text-xs font-bold text-primary/70 mb-0.5">@{comment.author?.nickname || 'user'}</p>
+                                        <p className="text-xs font-bold text-foreground mb-0.5">@{comment.author?.nickname || 'user'}</p>
                                         <p className="text-sm text-foreground break-words">{comment.text}</p>
                                     </div>
                                 </div>
