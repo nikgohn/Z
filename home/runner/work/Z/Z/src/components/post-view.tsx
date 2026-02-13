@@ -149,40 +149,41 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
             
             <div className={cn(
-                "h-full border-r border-border bg-background transition-all duration-300 relative md:w-1/2",
-                isImageExpanded ? "w-full overflow-hidden" : "w-full overflow-y-auto custom-scrollbar"
+                "relative h-full border-r border-border bg-background transition-all duration-300 md:w-1/2",
+                isImageExpanded ? "w-full" : "w-full"
             )}>
-                {mediaUrl && (
-                    <div 
-                        className={cn(
-                            "relative w-full aspect-square bg-muted",
-                             mediaType === 'image' && "cursor-pointer",
-                             isImageExpanded && "h-full"
-                        )}
-                         onClick={mediaType === 'image' ? () => setIsImageExpanded(!isImageExpanded) : undefined}
-                    >
-                        {mediaType === 'image' && (
-                            <Image 
-                                src={mediaUrl} 
-                                alt="Контент" 
-                                fill 
-                                className="object-contain" 
-                                priority
-                            />
-                        )}
-                        {mediaType === 'video' && (
-                            <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                        )}
-                    </div>
-                )}
+                 <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
+                    {mediaUrl && (
+                        <div 
+                            className={cn(
+                                "relative w-full aspect-square bg-muted",
+                                mediaType === 'image' && "cursor-pointer"
+                            )}
+                            onClick={mediaType === 'image' ? () => setIsImageExpanded(!isImageExpanded) : undefined}
+                        >
+                            {mediaType === 'image' && (
+                                <Image 
+                                    src={mediaUrl} 
+                                    alt="Контент" 
+                                    fill 
+                                    className={cn("object-contain", isImageExpanded && "object-cover")}
+                                    priority
+                                />
+                            )}
+                            {mediaType === 'video' && (
+                                <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
+                            )}
+                        </div>
+                    )}
 
-                {post.caption && !isImageExpanded && (
-                    <div className="p-6">
-                        <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                            {post.caption}
-                        </p>
-                    </div>
-                )}
+                    {post.caption && !isImageExpanded && (
+                        <div className="p-6">
+                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                                {post.caption}
+                            </p>
+                        </div>
+                    )}
+                 </div>
             </div>
 
             <div className={cn(
@@ -196,29 +197,34 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 <AvatarImage src={author.profilePictureUrl || undefined} alt={author.nickname} />
                                 <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-1">
+                            
+                            {/* Обертка для ника, лайка и даты */}
+                            <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-2"> {/* Контейнер для Ника + Лайка */}
                                     <Link 
                                         href={`/profile/${author.nickname}`} 
-                                        className="font-bold text-foreground hover:text-primary transition-colors truncate max-w-[150px] md:max-w-none"
+                                        className="font-bold text-foreground hover:text-primary transition-colors truncate max-w-[120px] sm:max-w-none block"
                                     >
                                         @{author.nickname}
                                     </Link>
                                     
+                                    {/* Кнопка лайка с рамкой как на скрине */}
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="sm"
                                         onClick={handleLike} 
                                         className={cn(
-                                            "gap-1.5 h-auto py-1 px-2 hover:bg-transparent",
-                                            isLiked ? "text-primary" : "text-muted-foreground"
+                                            "h-7 px-2 gap-1.5 border-border bg-background/40 hover:bg-background/60 transition-all",
+                                            isLiked ? "text-primary border-primary/50" : "text-muted-foreground"
                                         )}
                                     >
-                                        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-                                        <span className="font-mono text-sm">{likeCount}</span>
+                                        <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
+                                        <span className="font-mono text-xs">{likeCount}</span>
                                     </Button>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest -mt-1">
+                                
+                                {/* Дата под ними */}
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
                                     {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
                                 </p>
                             </div>
