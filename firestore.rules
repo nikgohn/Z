@@ -2,20 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Correctly implements symmetric difference to check if a user is only adding/removing their own UID.
+    // Securely checks if a user is only adding or removing their own UID from the likedBy list.
     function isLikingOrUnliking() {
-      // Ensure the fields exist and are lists
-      return request.resource.data.likedBy is list
-        && resource.data.likedBy is list
-        && (
-          // Compute the sets
-          let newSet = request.resource.data.likedBy.toSet();
-          let oldSet = resource.data.likedBy.toSet();
-          // The symmetric difference is (A union B) minus (A intersect B)
-          let symDifference = newSet.union(oldSet).difference(newSet.intersection(oldSet));
-          // The difference must contain exactly one item, which is the current user's UID
-          return symDifference.size() == 1 && symDifference.has(request.auth.uid);
-        );
+      // Default to an empty list if 'likedBy' is missing or not a list.
+      // This is crucial for old documents that don't have the 'likedBy' field.
+      let oldList = resource.data.likedBy is list ? resource.data.likedBy : [];
+      let newList = request.resource.data.likedBy is list ? request.resource.data.likedBy : [];
+
+      let newSet = newList.toSet();
+      let oldSet = oldList.toSet();
+    
+      // The symmetric difference is (A union B) minus (A intersect B).
+      let sym = newSet.union(oldSet).difference(newSet.intersection(oldSet));
+    
+      // The difference must contain exactly one item, and that item must be the current user's UID.
+      return sym.size() == 1 && sym.has(request.auth.uid);
     }
 
     // Rule for user profiles
@@ -35,13 +36,12 @@ service cloud.firestore {
       
       // Update logic:
       // 1. The author can update any field.
-      // 2. Any other authenticated user can ONLY like/unlike, which updates 'likedBy' and 'updatedAt'.
+      // 2. Any other authenticated user can ONLY like/unlike.
       allow update: if request.auth != null && (
         (resource.data.userId == request.auth.uid) || 
         (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy', 'updatedAt']) &&
-          isLikingOrUnliking() &&
-          request.resource.data.updatedAt == request.time
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy']) &&
+          isLikingOrUnliking()
         )
       );
     }
