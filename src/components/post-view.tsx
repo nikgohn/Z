@@ -15,13 +15,12 @@ import { Button } from "./ui/button";
 import { Heart, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
-import { Skeleton } from "./ui/skeleton";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrl = post.mediaUrls && post.mediaUrls[0];
     const mediaType = post.mediaTypes && post.mediaTypes[0];
 
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -91,23 +90,41 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         return () => unsubscribe();
     }, [firestore, post.id]);
 
+
     const handleLike = async () => {
-        if (!user || !firestore) return;
+        if (!user || !firestore) {
+            toast({ title: "Чтобы поставить лайк, необходимо войти.", variant: "destructive" });
+            return;
+        }
+
         const postRef = doc(firestore, 'posts', post.id);
         const newLikeStatus = !isLiked;
+
         setIsLiked(newLikeStatus);
-        setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
+        setLikeCount(currentCount => newLikeStatus ? currentCount + 1 : currentCount - 1);
+
         try {
-            await updateDoc(postRef, { likedBy: newLikeStatus ? arrayUnion(user.uid) : arrayRemove(user.uid) });
-        } catch (e) {
+            if (newLikeStatus) {
+                await updateDoc(postRef, {
+                    likedBy: arrayUnion(user.uid)
+                });
+            } else {
+                await updateDoc(postRef, {
+                    likedBy: arrayRemove(user.uid)
+                });
+            }
+        } catch (error: any) {
             setIsLiked(!newLikeStatus);
-            setLikeCount(prev => newLikeStatus ? prev - 1 : prev + 1);
+            setLikeCount(currentCount => newLikeStatus ? currentCount - 1 : currentCount + 1);
+            toast({ title: "Не удалось обновить статус лайка.", description: error.message, variant: "destructive" });
+            console.error("Error updating like status:", error);
         }
     };
 
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !firestore || !newComment.trim()) return;
+        if (!user || !userProfile || !newComment.trim()) return;
+
         setIsSubmittingComment(true);
         try {
             await addDoc(collection(firestore, 'posts', post.id, 'comments'), {
@@ -117,24 +134,29 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 createdAt: serverTimestamp(),
             });
             setNewComment('');
+        } catch (error: any) {
+            toast({
+                title: 'Не удалось добавить комментарий',
+                description: error.message,
+                variant: 'destructive'
+            });
         } finally {
             setIsSubmittingComment(false);
         }
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-black border border-white/10">
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
             
-            {/* LEFT SIDE (Content) */}
-            <div className="w-full md:w-1/2 h-full flex flex-col border-r border-white/5 relative overflow-hidden">
+            <div className="w-full md:w-1/2 h-full flex flex-col border-r border-border relative overflow-hidden">
                 
                 {mediaUrl && (
                     <div 
                         className={cn(
-                            "cursor-pointer transition-all duration-500 ease-in-out bg-zinc-950 flex items-center justify-center overflow-hidden group",
+                            "cursor-pointer transition-all duration-500 ease-in-out bg-muted flex items-center justify-center overflow-hidden group",
                             imageExpanded 
-                                ? "absolute inset-0 z-[100] w-full h-full bg-black/95" 
-                                : "basis-1/2 w-full relative border-b border-white/5"
+                                ? "absolute inset-0 z-[100] w-full h-full bg-background/95" 
+                                : "basis-1/2 w-full relative border-b border-border"
                         )}
                         onClick={() => setImageExpanded(!imageExpanded)}
                     >
@@ -151,60 +173,51 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             />
                         )}
                         
-                        {mediaType === 'video' && (
-                            <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
-                        )}
-                        
-                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-[110]">
-                            {imageExpanded ? <Minimize2 className="text-white h-5 w-5"/> : <Maximize2 className="text-white h-5 w-5"/>}
+                        <div className="absolute top-4 right-4 bg-background/60 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-[110]">
+                            {imageExpanded ? <Minimize2 className="h-5 w-5"/> : <Maximize2 className="h-5 w-5"/>}
                         </div>
                     </div>
                 )}
 
-                {/* TEXT BLOCK */}
                 <div className={cn(
-                    "p-6 overflow-y-auto bg-zinc-900/30 transition-all",
+                    "p-6 overflow-y-auto bg-background custom-scrollbar transition-all",
                     mediaUrl ? "basis-1/2" : "h-full",
                     imageExpanded && "opacity-0 pointer-events-none"
                 )}>
-                    {post.caption && (
-                         <p className="text-base md:text-lg leading-relaxed text-zinc-100 whitespace-pre-wrap">
-                            {post.caption}
-                        </p>
-                    )}
+                    <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                        {post.caption}
+                    </p>
                 </div>
             </div>
 
-            {/* RIGHT SIDE (Social) */}
             <div className={cn(
-                "w-full md:w-1/2 flex flex-col bg-zinc-950 h-full transition-opacity duration-300 border-l border-white/5",
-                imageExpanded ? "opacity-0 pointer-events-none md:opacity-0" : "opacity-100" 
+                "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
+                imageExpanded ? "opacity-0 pointer-events-none" : "opacity-100"
             )}>
-                {/* Author & Likes */}
-                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-zinc-900/20">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
                     {author ? (
                         <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 ring-1 ring-white/10">
+                            <Avatar className="h-10 w-10 ring-1 ring-border">
                                 <AvatarImage src={author.profilePictureUrl || undefined} />
-                                <AvatarFallback className="bg-zinc-800 text-zinc-400">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
+                                <AvatarFallback className="bg-background text-muted-foreground">{author.nickname?.[0].toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <Link href={`/profile/${author.nickname}`} className="font-bold text-white hover:text-green-400 transition-colors">
+                                <Link href={`/profile/${author.nickname}`} className="font-bold text-foreground hover:text-primary transition-colors">
                                     @{author.nickname}
                                 </Link>
-                                <p className="text-xs text-zinc-500 uppercase tracking-widest mt-0.5">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
                                     {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
                                 </p>
                             </div>
                         </div>
-                    ) : <Skeleton className="h-10 w-32"/>}
+                    ) : null}
                     <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={handleLike} 
                         className={cn(
-                            "gap-2 rounded-full px-4 hover:bg-white/5",
-                            isLiked ? "text-primary" : "text-zinc-400"
+                            "gap-2 rounded-full px-4",
+                            isLiked ? "text-primary" : "text-muted-foreground"
                         )}
                     >
                         <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
@@ -212,23 +225,22 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     </Button>
                 </div>
 
-                {/* Comments */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-zinc-950">
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
                     {commentsLoading ? (
-                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-zinc-700" /></div>
+                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
                     ) : comments.length === 0 ? (
-                        <div className="text-center py-20 text-zinc-600 text-sm italic">Пока нет обсуждений...</div>
+                         <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
                     ) : (
                         comments.map((comment: Comment) => (
                             <div key={comment.id} className="flex gap-3 animate-in fade-in">
                                 <Avatar className="h-7 w-7">
                                     <AvatarImage src={comment.author?.profilePictureUrl || undefined} />
-                                    <AvatarFallback className="text-xs">{comment.author?.nickname?.[0].toUpperCase()}</AvatarFallback>
+                                    <AvatarFallback className="bg-background">{comment.author?.nickname?.[0]?.toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                    <div className="bg-zinc-900/80 rounded-2xl px-4 py-2 inline-block max-w-full">
-                                        <p className="text-xs font-bold text-zinc-400 mb-0.5">@{comment.author?.nickname || 'user'}</p>
-                                        <p className="text-sm text-zinc-200 break-words">{comment.text}</p>
+                                    <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
+                                        <p className="text-xs font-bold text-primary/70 mb-0.5">@{comment.author?.nickname || 'user'}</p>
+                                        <p className="text-sm text-foreground break-words">{comment.text}</p>
                                     </div>
                                 </div>
                             </div>
@@ -236,9 +248,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
-                {/* Input */}
-                <div className="p-4 bg-zinc-900/40 border-t border-white/5">
-                    <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-zinc-800/50 rounded-2xl p-2">
+                <div className="p-4 bg-muted/10 border-t border-border">
+                    <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
                         <Textarea 
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
@@ -249,7 +260,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <Button 
                             type="submit" 
                             size="sm" 
-                            className="rounded-xl h-10 bg-white text-black hover:bg-zinc-200"
+                            className="rounded-xl h-10 bg-primary text-primary-foreground"
                             disabled={!newComment.trim() || isSubmittingComment}
                         >
                             {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
