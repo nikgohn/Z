@@ -87,30 +87,42 @@ body {
   }
 }
 
-/* Стилизация ползунка для всех элементов с классом custom-scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px; /* Ширина полосы */
+/* 1. Стилизация скроллбара для всего сайта (глобально) */
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: #2d4f3f #13231c; /* Цвет ползунка и фон дорожки для Firefox */
 }
 
-/* Фон дорожки, по которой едет ползунок */
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent; /* Делаем прозрачным, чтобы не выделялся */
+/* 2. Для браузеров Chrome, Safari, Edge (webkit) */
+
+/* Общий стиль для всех ползунков на сайте */
+::-webkit-scrollbar {
+  width: 8px; /* Чуть увеличил ширину для удобства */
+  height: 8px;
 }
 
-/* Сам ползунок (бегунок) */
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #577F59; /* Темно-зеленый цвет ползунка */
-  border-radius: 20px; /* Скругление */
-  border: 1px solid #1a2e25; /* Небольшая обводка в цвет фона, чтобы он казался тоньше */
+/* Фон дорожки */
+::-webkit-scrollbar-track {
+  background: #13231c; /* Очень темный зеленый (под фон сайта) */
+}
+
+/* Сам ползунок */
+::-webkit-scrollbar-thumb {
+  background-color: #2d4f3f; /* Твой основной темно-зеленый */
+  border-radius: 10px;
+  border: 2px solid #13231c; /* Отступ вокруг ползунка, чтобы он казался аккуратнее */
 }
 
 /* Цвет ползунка при наведении */
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #688e6a; /* Чуть более светлый зеленый при наведении */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #4ade80; /* Яркий зеленый при наведении (акцент) */
 }
 
-/* Для Firefox (стандартное свойство) */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #577F59 transparent;
+/* 3. Специфический стиль для элементов с классом custom-scrollbar (на всякий случай) */
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important; /* Внутри карточек лучше делать фон прозрачным */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #2d4f3f;
 }
