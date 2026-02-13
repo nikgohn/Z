@@ -165,7 +165,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <div 
                              className={cn(
                                 "relative bg-muted flex items-center justify-center w-full cursor-pointer transition-all duration-300",
-                                imageExpanded ? "flex-1" : "h-1/2 flex-shrink-0"
+                                imageExpanded ? "h-full" : "h-1/2"
                             )}
                             onClick={() => setImageExpanded(!imageExpanded)}
                         >
@@ -180,7 +180,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             {mediaType === 'video' && <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />}
                         </div>
                         {!imageExpanded && post.caption && (
-                             <div className="flex-1 p-4 border-t overflow-y-auto min-h-0">
+                             <div className="h-1/2 p-4 border-t overflow-y-auto">
                                 <p className="text-sm text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
                             </div>
                         )}
