@@ -12,21 +12,10 @@ import { useFirestore } from "@/firebase";
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, orderBy, onSnapshot, Timestamp, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import { Skeleton } from "./ui/skeleton";
-
-
-function getLikeText(count: number): string {
-    if (count % 10 === 1 && count % 100 !== 11) {
-        return 'лайк';
-    }
-    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) {
-        return 'лайка';
-    }
-    return 'лайков';
-}
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrl = post.mediaUrls && post.mediaUrls[0];
@@ -157,44 +146,58 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
-            {/* Left Column */}
-            <div className="w-full md:w-1/2 flex flex-col bg-card border-r border-border">
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden relative bg-card">
+            
+            {/* Левая колонка (Контент) */}
+            <div className="w-full md:w-1/2 flex flex-col border-r border-border h-full relative">
                 {mediaUrl ? (
                     <>
+                        {/* Контейнер Медиа */}
                         <div 
-                             className={cn(
-                                "relative bg-muted flex items-center justify-center w-full cursor-pointer transition-all duration-300",
-                                imageExpanded ? "flex-1 min-h-0" : "h-1/2 flex-shrink-0"
+                            className={cn(
+                                "cursor-pointer transition-all duration-300 ease-in-out bg-muted flex items-center justify-center overflow-hidden",
+                                imageExpanded 
+                                    ? "absolute inset-0 z-50 w-full h-full"
+                                    : "h-1/2 w-full relative"
                             )}
                             onClick={() => setImageExpanded(!imageExpanded)}
                         >
                             {mediaType === 'image' && (
                                 <Image 
                                     src={mediaUrl} 
-                                    alt={post.caption || "Изображение записи"} 
+                                    alt="Контент" 
                                     fill 
-                                    className="object-contain" 
+                                    className={cn("transition-all", imageExpanded ? "object-contain" : "object-cover")} 
                                 />
                             )}
-                            {mediaType === 'video' && <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />}
+                            {mediaType === 'video' && (
+                                <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
+                            )}
+                            
+                            <div className="absolute top-2 right-2 bg-black/50 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                {imageExpanded ? <Minimize2 className="text-white h-4 w-4"/> : <Maximize2 className="text-white h-4 w-4"/>}
+                            </div>
                         </div>
+
+                        {/* Контейнер Текста (Нижние 50%) */}
                         {!imageExpanded && post.caption && (
-                             <div className="flex-1 p-4 border-t overflow-y-auto min-h-0">
-                                <p className="text-sm text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
+                             <div className="h-1/2 p-4 overflow-y-auto bg-card">
+                                <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+                                    {post.caption}
+                                </p>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="h-full flex items-start justify-start p-6 overflow-y-auto">
+                    <div className="h-full p-6 overflow-y-auto">
                         <p className="text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
                     </div>
                 )}
             </div>
 
-            {/* Right Column */}
-            <div className="w-full md:w-1/2 flex flex-col bg-card">
-                {/* 1. Author Header */}
+            {/* Правая колонка (Автор и Комментарии) */}
+            <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full", imageExpanded && "hidden md:flex")}>
+                {/* Шапка автора */}
                 <div className="p-4 border-b">
                     {author ? (
                          <div className="flex items-start gap-3">
@@ -216,7 +219,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                         <Heart className={cn("h-5 w-5 transition-colors", isLiked && "fill-primary text-primary")} />
                                     </Button>
                                     <p className="text-sm font-semibold text-muted-foreground">
-                                        {likeCount} {getLikeText(likeCount)}
+                                        {likeCount}
                                     </p>
                                 </div>
                             </div>
