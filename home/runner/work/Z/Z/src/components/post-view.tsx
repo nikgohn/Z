@@ -9,7 +9,7 @@ import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
-import { doc, updateDoc, arrayUnion, arrayRemove, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
 import { Heart } from "lucide-react";
@@ -59,13 +59,11 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         try {
             if (newLikeStatus) {
                 await updateDoc(postRef, {
-                    likedBy: arrayUnion(user.uid),
-                    updatedAt: serverTimestamp()
+                    likedBy: arrayUnion(user.uid)
                 });
             } else {
                 await updateDoc(postRef, {
-                    likedBy: arrayRemove(user.uid),
-                    updatedAt: serverTimestamp()
+                    likedBy: arrayRemove(user.uid)
                 });
             }
         } catch (error: any) {
@@ -89,8 +87,10 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 ) : mediaType === 'video' && mediaUrl ? (
                     <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
                 ) : (
-                    <div className="flex items-center justify-center h-full p-8">
-                         <p className="text-sm text-foreground break-words">{post.caption}</p>
+                    <div className="p-4 h-full w-full overflow-y-auto">
+                        <p className="text-sm text-foreground break-words">
+                            {post.caption}
+                        </p>
                     </div>
                 )}
             </div>
@@ -123,6 +123,9 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <p className="text-sm text-foreground break-words">
                             {post.caption}
                         </p>
+                    )}
+                     {!mediaUrl && post.caption && (
+                        <div className="hidden"></div>
                     )}
                 </div>
 
