@@ -152,13 +152,13 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             <div className="w-full md:w-1/2 flex flex-col border-r border-border h-full relative">
                 {mediaUrl ? (
                     <>
-                        {/* Контейнер Медиа */}
+                        {/* Media Container */}
                         <div 
                             className={cn(
-                                "cursor-pointer transition-all duration-300 ease-in-out bg-muted flex items-center justify-center overflow-hidden",
+                                "cursor-pointer transition-all duration-300 ease-in-out bg-muted flex items-center justify-center overflow-hidden group",
                                 imageExpanded 
-                                    ? "absolute inset-0 z-50 w-full h-full"
-                                    : "h-1/2 w-full relative"
+                                    ? "absolute inset-0 z-50 w-full h-full bg-background/80 backdrop-blur-sm"
+                                    : "basis-1/2 w-full relative"
                             )}
                             onClick={() => setImageExpanded(!imageExpanded)}
                         >
@@ -167,7 +167,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                     src={mediaUrl} 
                                     alt="Контент" 
                                     fill 
-                                    className={cn("transition-all", imageExpanded ? "object-contain" : "object-cover")} 
+                                    className={cn("transition-all duration-300", imageExpanded ? "object-contain" : "object-cover")} 
                                 />
                             )}
                             {mediaType === 'video' && (
@@ -179,16 +179,21 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             </div>
                         </div>
 
-                        {/* Контейнер Текста (Нижние 50%) */}
-                        {!imageExpanded && post.caption && (
-                             <div className="h-1/2 p-4 overflow-y-auto bg-card">
+                        {/* Caption Container */}
+                        <div className={cn(
+                            "p-4 overflow-y-auto",
+                            "basis-1/2",
+                            imageExpanded && "opacity-0 pointer-events-none"
+                        )}>
+                            {post.caption && (
                                 <p className="text-sm text-foreground/90 whitespace-pre-wrap">
                                     {post.caption}
                                 </p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </>
                 ) : (
+                     // If no media, caption takes full height
                     <div className="h-full p-6 overflow-y-auto">
                         <p className="text-foreground/90 whitespace-pre-wrap text-left">{post.caption}</p>
                     </div>
@@ -196,9 +201,12 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             </div>
 
             {/* Правая колонка (Автор и Комментарии) */}
-            <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full", imageExpanded && "hidden md:flex")}>
+            <div className={cn(
+                "w-full md:w-1/2 flex flex-col bg-card h-full", 
+                imageExpanded && "hidden md:flex"
+            )}>
                 {/* Шапка автора */}
-                <div className="p-4 border-b">
+                <div className="p-4 border-b border-border">
                     {author ? (
                          <div className="flex items-start gap-3">
                             <Link href={`/profile/${author.nickname}`} className="flex-shrink-0">
@@ -239,7 +247,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
-                {/* 2. Scrollable Comments Area */}
+                {/* Comments Area */}
                 <div className="p-4 flex-1 overflow-y-auto min-h-0">
                     <div className="space-y-4">
                         {commentsLoading && (
@@ -282,8 +290,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     </div>
                 </div>
 
-                {/* 3. Footer with Actions */}
-                <div className="mt-auto p-4 border-t">
+                {/* Comment Input Footer */}
+                <div className="mt-auto p-4 border-t border-border">
                     {userProfile && (
                         <form onSubmit={handleCommentSubmit} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">

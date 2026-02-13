@@ -65,7 +65,7 @@ export function PostCard({ post }: { post: Post }) {
                             <video src={mediaUrl} className="w-full h-full object-contain" muted loop playsInline />
                         ) : (
                              <div className="p-4 h-full w-full overflow-y-auto">
-                                <p className="text-sm text-foreground break-words line-clamp-6">
+                                <p className="text-sm text-foreground break-words line-clamp-6 text-left">
                                     {post.caption}
                                 </p>
                             </div>
@@ -97,7 +97,7 @@ export function PostCard({ post }: { post: Post }) {
                     </div>
                 </div>
             </DialogTrigger>
-            <DialogContent className="p-0 border-0 max-w-4xl bg-transparent shadow-none">
+            <DialogContent className="p-0 border-0 max-w-4xl">
                  <PostView post={post} author={author} />
             </DialogContent>
         </Dialog>
