@@ -156,7 +156,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     };
 
     return (
-        <div className="flex flex-col md:flex-row max-h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-4xl mx-auto rounded-lg overflow-hidden">
             {/* Left Column */}
             <div className="w-full md:w-1/2 flex flex-col bg-card border-r border-border">
                 {mediaUrl ? (
@@ -253,17 +253,17 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     </div>
                 </div>
 
-                <div className="p-4 border-t flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={handleLike}>
-                        <Heart className={cn("h-6 w-6 transition-colors", isLiked && "fill-destructive text-destructive")} />
-                    </Button>
-                    <p className="text-sm font-semibold text-muted-foreground">
-                        {likeCount} {getLikeText(likeCount)}
-                    </p>
-                </div>
+                <div className="mt-auto p-4 border-t space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={handleLike}>
+                            <Heart className={cn("h-6 w-6 transition-colors", isLiked && "fill-destructive text-destructive")} />
+                        </Button>
+                        <p className="text-sm font-semibold text-muted-foreground">
+                            {likeCount} {getLikeText(likeCount)}
+                        </p>
+                    </div>
 
-                {userProfile && (
-                    <div className="p-4 border-t">
+                    {userProfile && (
                         <form onSubmit={handleCommentSubmit} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
@@ -286,8 +286,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 {isSubmittingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Отправить'}
                             </Button>
                         </form>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
