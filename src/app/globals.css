@@ -118,11 +118,22 @@ html, body {
   background-color: #6a946c; /* Более светлый оттенок при наведении */
 }
 
-/* 3. Специфический стиль для элементов с классом custom-scrollbar (на всякий случай) */
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent !important; /* Внутри карточек лучше делать фон прозрачным */
+/* Comments scrollbar override */
+.comments-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #577F59 #384D43;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #577F59;
+.comments-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comments-scrollbar::-webkit-scrollbar-track {
+  background: #384D43 !important;
+}
+
+.comments-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #577F59 !important;
+  border-radius: 10px;
+  border: 2px solid #384D43 !important;
 }
