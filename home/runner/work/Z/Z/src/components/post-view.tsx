@@ -152,7 +152,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 "h-full border-r border-border bg-background transition-all duration-300 relative",
                 isImageExpanded ? "w-full md:w-full" : "w-full md:w-1/2"
             )}>
-                 <div className={cn("absolute inset-0 overflow-y-auto custom-scrollbar", isImageExpanded && "hidden")}>
+                <div className={cn("absolute inset-0 overflow-y-auto custom-scrollbar", isImageExpanded && "hidden")}>
                     {mediaUrl && (
                         <div 
                             className="relative w-full aspect-square bg-muted cursor-pointer"
