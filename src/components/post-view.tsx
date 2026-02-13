@@ -160,17 +160,10 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             {/* Left Column */}
             <div className="w-full md:w-1/2 flex flex-col bg-card border-r border-border">
                 {mediaUrl ? (
-                    <>
-                        <div className="flex-1 relative bg-muted flex items-center justify-center min-h-0">
-                            {mediaType === 'image' && <Image src={mediaUrl} alt={post.caption || "Изображение записи"} fill className="object-contain" />}
-                            {mediaType === 'video' && <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />}
-                        </div>
-                        {post.caption && (
-                            <div className="h-1/3 flex-none p-4 border-t border-border overflow-y-auto">
-                                <p className="text-sm text-foreground/90 whitespace-pre-wrap">{post.caption}</p>
-                            </div>
-                        )}
-                    </>
+                    <div className="flex-1 relative bg-muted flex items-center justify-center min-h-0">
+                        {mediaType === 'image' && <Image src={mediaUrl} alt={post.caption || "Изображение записи"} fill className="object-contain" />}
+                        {mediaType === 'video' && <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />}
+                    </div>
                 ) : (
                     <div className="h-full flex items-center justify-center p-6 overflow-y-auto">
                         <p className="text-foreground/90 whitespace-pre-wrap text-center">{post.caption}</p>
@@ -180,6 +173,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
 
             {/* Right Column */}
             <div className="w-full md:w-1/2 flex flex-col bg-card">
+                {/* 1. Author Header */}
                 <div className="p-4 border-b">
                     {author ? (
                          <div className="flex items-center gap-3">
@@ -190,10 +184,10 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                  </Avatar>
                             </Link>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-foreground truncate">
+                                <p className="font-semibold text-foreground">
                                     <Link href={`/profile/${author.nickname}`}>{author.nickname}</Link>
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mt-0.5">
                                     {post.createdAt ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru }) : 'только что'}
                                 </p>
                             </div>
@@ -209,11 +203,33 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
+                {/* 2. Scrollable Comments Area */}
                 <div className="p-4 flex-1 overflow-y-auto">
                     <div className="space-y-4">
+                        {/* Caption as first item in scroll area */}
+                        {post.caption && (
+                            <div className="flex items-start gap-3">
+                                {author && (
+                                     <Link href={`/profile/${author.nickname}`} className="flex-shrink-0">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={author.profilePictureUrl ?? undefined} alt={author.nickname} />
+                                            <AvatarFallback>{author.nickname[0].toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                    </Link>
+                                )}
+                                <div>
+                                    <p className="text-sm">
+                                        <Link href={`/profile/${author?.nickname}`} className="font-semibold text-foreground">{author?.nickname}</Link>
+                                        <span className="ml-2 text-foreground/90 whitespace-pre-wrap">{post.caption}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Comments List */}
                         {commentsLoading && (
                             [...Array(3)].map((_, i) => (
-                                <div key={i} className="flex items-center gap-3">
+                                <div key={i} className="flex items-start gap-3">
                                     <Skeleton className="h-8 w-8 rounded-full" />
                                     <div className="flex-1 space-y-2">
                                         <Skeleton className="h-3 w-1/4" />
@@ -234,9 +250,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 ) : <Skeleton className="h-8 w-8 rounded-full" />}
                                 <div>
                                     <p className="text-sm">
-                                        {comment.author ? (
-                                            <Link href={`/profile/${comment.author.nickname}`} className="font-semibold text-foreground">{comment.author.nickname}</Link>
-                                        ) : <Skeleton className="h-4 w-20 mb-1" />}
+                                        <Link href={`/profile/${comment.author?.nickname}`} className="font-semibold text-foreground">{comment.author?.nickname}</Link>
                                         <span className="ml-2 text-foreground/90">{comment.text}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -247,14 +261,15 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 </div>
                             </div>
                         ))}
-                         {!commentsLoading && comments.length === 0 && (
+                         {!commentsLoading && comments.length === 0 && !post.caption && (
                             <p className="text-sm text-muted-foreground text-center py-4">Комментариев пока нет. Будьте первым!</p>
                         )}
                     </div>
                 </div>
 
+                {/* 3. Footer with Actions */}
                 <div className="mt-auto p-4 border-t space-y-4">
-                    <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" onClick={handleLike}>
                             <Heart className={cn("h-6 w-6 transition-colors", isLiked && "fill-destructive text-destructive")} />
                         </Button>
@@ -262,7 +277,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             {likeCount} {getLikeText(likeCount)}
                         </p>
                     </div>
-
                     {userProfile && (
                         <form onSubmit={handleCommentSubmit} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
