@@ -157,7 +157,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         <>
             <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
                 {/* LEFT: image + caption — whole column is scrollable */}
-                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border overflow-y-auto min-h-0">
+                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border overflow-y-auto min-h-0 comments-scrollbar">
                     {/* image area — aspect-square provides a definite height for Image fill */}
                     <div className="relative bg-muted flex-shrink-0 aspect-square w-full">
                         {mediaUrls.length > 0 && mediaTypes.every(t => t === 'image') && (
@@ -172,12 +172,12 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                   <>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/30 p-1 rounded"
+                                      className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
                                       aria-label="prev"
                                     >‹</button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/30 p-1 rounded"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
                                       aria-label="next"
                                     >›</button>
                                   </>
@@ -323,18 +323,18 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                   className="absolute top-6 right-6 z-50 text-white/80 hover:text-white transition-colors"
                   aria-label="Закрыть"
                 >
-                  <X className="w-7 h-7" />
+                  <X className="w-8 h-8" />
                 </button>
             
                 <button
                   onClick={() => setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length)}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-50"
+                  className="absolute left-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
                 >
                   ‹
                 </button>
             
-                <div className="w-full max-w-6xl h-[85vh] flex items-center justify-center relative">
-                  <div className="relative w-full h-full rounded-xl overflow-hidden">
+                <div className="w-full max-w-6xl h-[85vh] flex items-center justify-center relative rounded-3xl overflow-hidden">
+                  <div className="relative w-full h-full">
                     <Image
                       src={mediaUrls[currentIndex]}
                       alt={`Full ${currentIndex + 1}`}
@@ -348,7 +348,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             
                 <button
                   onClick={() => setCurrentIndex(i => (i + 1) % mediaUrls.length)}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 text-white/70 hover:text-white z-50"
+                  className="absolute right-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
                 >
                   ›
                 </button>
