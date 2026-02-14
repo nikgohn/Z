@@ -334,7 +334,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </button>
             
                 <div className="w-full max-w-6xl h-[85vh] flex items-center justify-center relative">
-                  <div className="relative w-full h-full">
+                  <div className="relative w-full h-full rounded-xl overflow-hidden">
                     <Image
                       src={mediaUrls[currentIndex]}
                       alt={`Full ${currentIndex + 1}`}
