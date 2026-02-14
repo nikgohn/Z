@@ -308,46 +308,51 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             </div>
 
             {isImageExpanded && mediaUrls.length > 0 && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-[#31443B]/80 p-4"
-              >
-                <div 
-                  className="w-full max-w-6xl h-full relative rounded-3xl"
-                  style={{ backgroundColor: '#40594D' }}
-                >
-                  <DialogPrimitive.Close
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-[#31443B]/80 p-4"
                     onClick={() => setIsImageExpanded(false)}
-                    className="absolute right-2 top-2 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
-                  </DialogPrimitive.Close>
-                  
-                  <div className="relative w-full h-full rounded-3xl overflow-hidden">
-                    <Image
-                      src={mediaUrls[currentIndex]}
-                      alt={`Full ${currentIndex + 1}`}
-                      fill
-                      className="object-contain"
-                      priority
-                      unoptimized
-                    />
-                  </div>
-                  <button
-                    onClick={() => setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length)}
-                    className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-5xl select-none"
-                  >
-                    ‹
-                  </button>
+                >
+                    <div
+                        className="relative flex h-[90vh] w-full max-w-5xl rounded-xl overflow-hidden bg-card border border-border shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <DialogPrimitive.Close
+                            onClick={() => setIsImageExpanded(false)}
+                            className="absolute right-2 top-2 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                        >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Close</span>
+                        </DialogPrimitive.Close>
+                        
+                        <div className="relative w-full h-full">
+                            <Image
+                                src={mediaUrls[currentIndex]}
+                                alt={`Full ${currentIndex + 1}`}
+                                fill
+                                className="object-contain"
+                                priority
+                                unoptimized
+                            />
+                        </div>
 
-                  <button
-                    onClick={() => setCurrentIndex(i => (i + 1) % mediaUrls.length)}
-                    className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-5xl select-none"
-                  >
-                    ›
-                  </button>
+                        {mediaUrls.length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-5xl select-none"
+                                >
+                                    ‹
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-5xl select-none"
+                                >
+                                    ›
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
-              </div>
             )}
         </>
     );
