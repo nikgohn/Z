@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
@@ -30,7 +29,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     const [commentsLoading, setCommentsLoading] = React.useState(true);
     const [newComment, setNewComment] = React.useState('');
     const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
-
+    
+    // State for the animation
     const [isImageExpanded, setIsImageExpanded] = React.useState(false);
     const [currentIndex, setCurrentIndex] = React.useState(0);
 
@@ -92,7 +92,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         return () => unsubscribe();
     }, [firestore, post.id]);
 
-
     const handleLike = async () => {
         if (!user || !firestore) {
             toast({ title: "Чтобы поставить лайк, необходимо войти.", variant: "destructive" });
@@ -146,219 +145,189 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             setIsSubmittingComment(false);
         }
     };
-    
-    const showImageAt = (index: number) => {
-        setCurrentIndex(index);
-        setIsImageExpanded(true);
-    };
 
     return (
-        <>
-            <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
-                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border overflow-y-auto min-h-0 comments-scrollbar">
-                    <div className="relative bg-muted flex-shrink-0 w-full h-[60vh]">
-                        {mediaUrls.length > 0 && mediaTypes.every(t => t === 'image') ? (
-                            <div className="w-full h-full relative">
-                                <img
-                                  src={mediaUrls[currentIndex]}
-                                  alt={`Post media ${currentIndex + 1}`}
-                                  className="w-full h-full object-contain cursor-pointer"
-                                  onClick={() => showImageAt(currentIndex)}
-                                />
-                                {mediaUrls.length > 1 && (
-                                  <>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                                      className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
-                                      aria-label="prev"
-                                    >‹</button>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
-                                      aria-label="next"
-                                    >›</button>
-                                  </>
-                                )}
-                            </div>
-                        ) : mediaUrls.length === 1 && mediaTypes[0] === 'video' ? (
-                            <div className="w-full h-full">
-                                <video src={mediaUrls[0]} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                            </div>
-                        ) : null}
+        // The main container MUST be relative for the absolute positioning to work
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-card border border-border shadow-2xl">
+            
+            {/* LEFT SIDE / EXPANDING IMAGE CONTAINER */}
+            <div
+                className={cn(
+                    "transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
+                    isImageExpanded 
+                        ? "absolute inset-0 z-10 w-full h-full bg-black cursor-zoom-out"
+                        : "relative w-full md:w-1/2 bg-muted cursor-zoom-in"
+                )}
+                onClick={() => {
+                    if (mediaUrls.length > 0) {
+                        setIsImageExpanded(!isImageExpanded);
+                    }
+                }}
+            >
+                {mediaUrls.length > 0 ? (
+                    <Image
+                        src={mediaUrls[currentIndex]}
+                        fill
+                        alt={`Post media ${currentIndex + 1}`}
+                        className={cn(
+                            "transition-all duration-500 ease-in-out",
+                            isImageExpanded ? "object-contain" : "object-cover"
+                        )}
+                        priority
+                    />
+                ) : (
+                    <div className="p-6 text-foreground overflow-y-auto h-full w-full">
+                        <p className="whitespace-pre-wrap">{post.caption}</p>
                     </div>
+                )}
 
+                {mediaUrls.length > 1 && (
+                     <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length);
+                            }}
+                            className={cn(
+                                "absolute top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white transition-colors select-none bg-black/30 hover:bg-black/50 rounded-full p-1",
+                                "left-4 h-10 w-10"
+                            )}
+                            aria-label="prev"
+                        >
+                            <ChevronLeft className="h-full w-full"/>
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentIndex(i => (i + 1) % mediaUrls.length);
+                            }}
+                             className={cn(
+                                "absolute top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white transition-colors select-none bg-black/30 hover:bg-black/50 rounded-full p-1",
+                                "right-4 h-10 w-10"
+                            )}
+                            aria-label="next"
+                        >
+                            <ChevronRight className="h-full w-full"/>
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {/* RIGHT SIDE: Details and Comments */}
+            <div className="w-full md:w-1/2 flex flex-col bg-card h-full">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+                    {author && (
+                    <>
+                        <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
+                            <AvatarImage src={author.profilePictureUrl || undefined} />
+                            <AvatarFallback className="bg-background text-muted-foreground">
+                            {author.nickname?.[0].toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                            <Link
+                            href={`/profile/${author.nickname}`}
+                            className="font-bold text-foreground hover:text-primary transition-colors"
+                            >
+                            @{author.nickname}
+                            </Link>
+                            <p className="text-xs text-muted-foreground mt-1">
+                            {post.createdAt
+                                ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
+                                : "только что"}
+                            </p>
+                        </div>
+                        </div>
+                        <button
+                        onClick={handleLike}
+                        className={cn(
+                            "flex items-center gap-2 px-2 py-1",
+                            "bg-transparent border-none shadow-none",
+                            "hover:bg-transparent active:bg-transparent",
+                            "focus:outline-none focus-visible:ring-0",
+                            "transition-colors",
+                            isLiked
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        >
+                        <Heart
+                            className={cn(
+                            "h-5 w-5 transition-colors",
+                            isLiked && "fill-current"
+                            )}
+                        />
+                        <span className="text-sm font-semibold">
+                            {likeCount}
+                        </span>
+                        </button>
+                    </>
+                    )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
                     {post.caption && (
-                        <div className="p-6">
-                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                         <div className="pb-4 border-b border-border">
+                            <p className="text-base text-foreground whitespace-pre-wrap">
                                 {post.caption}
                             </p>
                         </div>
                     )}
-                </div>
-
-                <div className="w-full md:w-1/2 flex flex-col bg-card h-full">
-                     <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
-                      {author && (
-                        <>
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
-                              <AvatarImage src={author.profilePictureUrl || undefined} />
-                              <AvatarFallback className="bg-background text-muted-foreground">
-                                {author.nickname?.[0].toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-
-                            <div className="flex flex-col">
-                              <Link
-                                href={`/profile/${author.nickname}`}
-                                className="font-bold text-foreground hover:text-primary transition-colors"
-                              >
-                                @{author.nickname}
-                              </Link>
-
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {post.createdAt
-                                  ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
-                                  : "только что"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={handleLike}
-                            className={cn(
-                              "flex items-center gap-2 px-2 py-1",
-                              "bg-transparent border-none shadow-none",
-                              "hover:bg-transparent active:bg-transparent",
-                              "focus:outline-none focus-visible:ring-0",
-                              "transition-colors",
-                              isLiked
-                                ? "text-primary"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            <Heart
-                              className={cn(
-                                "h-5 w-5 transition-colors",
-                                isLiked && "fill-current"
-                              )}
-                            />
-                            <span className="text-sm font-semibold">
-                              {likeCount}
-                            </span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
-                        {commentsLoading ? (
-                            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-                        ) : comments.length === 0 ? (
-                             <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
-                        ) : (
-                            comments.map((comment: Comment) => (
-                                <div key={comment.id} className="flex gap-3 animate-in fade-in">
-                                    <Avatar className="h-7 w-7">
-                                        <AvatarImage src={comment.author?.profilePictureUrl || undefined} />
-                                        <AvatarFallback className="bg-background">{comment.author?.nickname?.[0]?.toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
-                                            <p className="text-xs font-bold text-foreground mb-0.5">@{comment.author?.nickname || 'user'}</p>
-                                            <p className="text-sm text-foreground break-words">{comment.text}</p>
-                                        </div>
+                    
+                    {commentsLoading ? (
+                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+                    ) : comments.length === 0 ? (
+                        <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
+                    ) : (
+                        comments.map((comment: Comment) => (
+                            <div key={comment.id} className="flex gap-3 animate-in fade-in">
+                                <Avatar className="h-7 w-7">
+                                    <AvatarImage src={comment.author?.profilePictureUrl || undefined} />
+                                    <AvatarFallback className="bg-background">{comment.author?.nickname?.[0]?.toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
+                                        <p className="text-xs font-bold text-foreground mb-0.5">@{comment.author?.nickname || 'user'}</p>
+                                        <p className="text-sm text-foreground break-words">{comment.text}</p>
                                     </div>
                                 </div>
-                            ))
-                        )}
-                    </div>
-
-                    {userProfile && (
-                        <div className="p-4 bg-muted/10 border-t border-border">
-                            <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
-                                 <Avatar className="h-8 w-8 self-start mt-1">
-                                    <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
-                                    <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <Textarea 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Добавить комментарий..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleCommentSubmit(e as any);
-                                        }
-                                    }}
-                                    className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
-                                    rows={1}
-                                />
-                                <button
-                                    type="submit" 
-                                    className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
-                                    disabled={!newComment.trim() || isSubmittingComment}
-                                >
-                                    {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
-                                </button>
-                            </form>
-                        </div>
+                            </div>
+                        ))
                     )}
                 </div>
+
+                {userProfile && (
+                    <div className="p-4 bg-muted/10 border-t border-border">
+                        <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
+                                <Avatar className="h-8 w-8 self-start mt-1">
+                                <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
+                                <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                            <Textarea 
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Добавить комментарий..."
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleCommentSubmit(e as any);
+                                    }
+                                }}
+                                className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
+                                rows={1}
+                            />
+                            <button
+                                type="submit" 
+                                className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
+                                disabled={!newComment.trim() || isSubmittingComment}
+                            >
+                                {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
+                            </button>
+                        </form>
+                    </div>
+                )}
             </div>
-
-            {isImageExpanded && mediaUrls.length > 0 && (
-                <DialogPrimitive.Root open={isImageExpanded} onOpenChange={setIsImageExpanded}>
-                    <DialogPrimitive.Portal forceMount>
-                        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#31443B]/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                        <DialogPrimitive.Content
-                            className={cn(
-                                "fixed left-[50%] top-[50%] z-50 h-[90vh] w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] rounded-xl border border-border bg-background shadow-lg",
-                                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-                            )}
-                        >
-                            <div className="relative h-full w-full">
-                                <Image
-                                    src={mediaUrls[currentIndex]}
-                                    alt={`Full screen post media ${currentIndex + 1}`}
-                                    fill
-                                    className="object-contain"
-                                    priority
-                                    unoptimized
-                                />
-                            </div>
-
-                            {mediaUrls.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-                                        aria-label="Previous image"
-                                    >
-                                        <ChevronLeft className="h-6 w-6" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-                                        aria-label="Next image"
-                                    >
-                                        <ChevronRight className="h-6 w-6" />
-                                    </button>
-                                </>
-                            )}
-
-                            <DialogPrimitive.Close asChild>
-                                <button
-                                    className="absolute right-2 top-2 z-20 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-                                    aria-label="Close"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </DialogPrimitive.Close>
-                        </DialogPrimitive.Content>
-                    </DialogPrimitive.Portal>
-                </DialogPrimitive.Root>
-            )}
-        </>
+        </div>
     );
 }
