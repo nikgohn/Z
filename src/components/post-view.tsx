@@ -146,196 +146,199 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     };
 
     return (
-        <div
-          className={cn(
-            "flex h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl",
-            isImageExpanded ? "flex-col" : "flex-col md:flex-row"
-          )}
-        >
-            <div
-              className={cn(
-                "relative bg-background transition-all duration-300 flex flex-col",
-                isImageExpanded
-                  ? "w-full h-full"
-                  : "w-full md:w-1/2 h-full border-r border-border"
-              )}
-            >
-                <div
-                    className={cn(
-                        "relative bg-muted flex-shrink-0",
-                        isImageExpanded
-                          ? "h-full w-full"
-                          : "aspect-square w-full"
-                    )}
-                >
-                    {isImageExpanded && (
-                        <button
-                            onClick={() => setIsImageExpanded(false)}
-                            className="absolute top-4 right-4 z-20 bg-black/50 text-white px-3 py-1 rounded-md text-sm"
-                        >
-                            Закрыть
-                        </button>
-                    )}
-
-                    {mediaUrls.length > 0 && mediaTypes.every(type => type === 'image') ? (
-                        <Carousel className="w-full h-full">
-                            <CarouselContent className="h-full">
-                                {mediaUrls.map((url, index) => (
-                                    <CarouselItem key={index} className="relative w-full h-full">
-                                        <Image
-                                            src={url}
-                                            alt={`Post content ${index + 1}`}
-                                            fill
-                                            className="object-contain cursor-pointer"
-                                            onClick={() => setIsImageExpanded(true)}
-                                            priority={index === 0}
+        <>
+            <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
+                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border">
+                    <div className="relative bg-muted flex-shrink-0 aspect-square w-full">
+                        {mediaUrls.length > 0 && mediaTypes.every(type => type === 'image') ? (
+                            <Carousel className="w-full h-full">
+                                <CarouselContent className="h-full">
+                                    {mediaUrls.map((url, index) => (
+                                        <CarouselItem key={index} className="relative w-full h-full">
+                                            <Image
+                                                src={url}
+                                                alt={`Post content ${index + 1}`}
+                                                fill
+                                                className="object-contain cursor-pointer"
+                                                onClick={() => setIsImageExpanded(true)}
+                                                priority={index === 0}
+                                            />
+                                        </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                                {mediaUrls.length > 1 && (
+                                    <>
+                                        <CarouselPrevious
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80"
                                         />
-                                    </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            {mediaUrls.length > 1 && (
-                                <>
-                                    <CarouselPrevious
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80"
-                                    />
-                                    <CarouselNext
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80"
-                                    />
-                                </>
-                            )}
-                        </Carousel>
-                    ) : mediaUrls.length === 1 && mediaTypes[0] === 'video' ? (
-                        <div onClick={(e) => e.stopPropagation()} className="w-full h-full">
-                           <video src={mediaUrls[0]} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                        </div>
-                    ) : null}
-                </div>
-
-                {post.caption && !isImageExpanded && (
-                    <div className="p-6 overflow-y-auto comments-scrollbar flex-grow">
-                        <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                            {post.caption}
-                        </p>
+                                        <CarouselNext
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80"
+                                        />
+                                    </>
+                                )}
+                            </Carousel>
+                        ) : mediaUrls.length === 1 && mediaTypes[0] === 'video' ? (
+                            <div className="w-full h-full">
+                               <video src={mediaUrls[0]} className="w-full h-full object-contain" controls autoPlay loop playsInline />
+                            </div>
+                        ) : null}
                     </div>
-                )}
-            </div>
 
-            <div className={cn(
-                "w-full md:w-1/2 flex flex-col bg-card h-full",
-                isImageExpanded && "hidden"
-            )}>
-                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
-                  {author && (
-                    <>
-                      {/* Левая часть: аватар + текст */}
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
-                          <AvatarImage src={author.profilePictureUrl || undefined} />
-                          <AvatarFallback className="bg-background text-muted-foreground">
-                            {author.nickname?.[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-
-                        <div className="flex flex-col">
-                          <Link
-                            href={`/profile/${author.nickname}`}
-                            className="font-bold text-foreground hover:text-primary transition-colors"
-                          >
-                            @{author.nickname}
-                          </Link>
-
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {post.createdAt
-                              ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
-                              : "только что"}
-                          </p>
+                    {post.caption && (
+                        <div className="p-6 overflow-y-auto comments-scrollbar flex-grow">
+                            <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+                                {post.caption}
+                            </p>
                         </div>
-                      </div>
-
-                      {/* Правая часть: лайк */}
-                      <button
-                        onClick={handleLike}
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1",
-                          "bg-transparent border-none shadow-none",
-                          "hover:bg-transparent active:bg-transparent",
-                          "focus:outline-none focus-visible:ring-0",
-                          "transition-colors",
-                          isLiked
-                            ? "text-primary"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <Heart
-                          className={cn(
-                            "h-5 w-5 transition-colors",
-                            isLiked && "fill-current"
-                          )}
-                        />
-                        <span className="text-sm font-semibold">
-                          {likeCount}
-                        </span>
-                      </button>
-                    </>
-                  )}
+                    )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar">
-                    {commentsLoading ? (
-                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-                    ) : comments.length === 0 ? (
-                         <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
-                    ) : (
-                        comments.map((comment: Comment) => (
-                            <div key={comment.id} className="flex gap-3 animate-in fade-in">
-                                <Avatar className="h-7 w-7">
-                                    <AvatarImage src={comment.author?.profilePictureUrl || undefined} />
-                                    <AvatarFallback className="bg-background">{comment.author?.nickname?.[0]?.toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
-                                        <p className="text-xs font-bold text-foreground mb-0.5">@{comment.author?.nickname || 'user'}</p>
-                                        <p className="text-sm text-foreground break-words">{comment.text}</p>
+                <div className="w-full md:w-1/2 flex flex-col bg-card h-full">
+                     <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+                      {author && (
+                        <>
+                          {/* Левая часть: аватар + текст */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
+                              <AvatarImage src={author.profilePictureUrl || undefined} />
+                              <AvatarFallback className="bg-background text-muted-foreground">
+                                {author.nickname?.[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="flex flex-col">
+                              <Link
+                                href={`/profile/${author.nickname}`}
+                                className="font-bold text-foreground hover:text-primary transition-colors"
+                              >
+                                @{author.nickname}
+                              </Link>
+
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {post.createdAt
+                                  ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
+                                  : "только что"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Правая часть: лайк */}
+                          <button
+                            onClick={handleLike}
+                            className={cn(
+                              "flex items-center gap-2 px-2 py-1",
+                              "bg-transparent border-none shadow-none",
+                              "hover:bg-transparent active:bg-transparent",
+                              "focus:outline-none focus-visible:ring-0",
+                              "transition-colors",
+                              isLiked
+                                ? "text-primary"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <Heart
+                              className={cn(
+                                "h-5 w-5 transition-colors",
+                                isLiked && "fill-current"
+                              )}
+                            />
+                            <span className="text-sm font-semibold">
+                              {likeCount}
+                            </span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar">
+                        {commentsLoading ? (
+                            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+                        ) : comments.length === 0 ? (
+                             <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
+                        ) : (
+                            comments.map((comment: Comment) => (
+                                <div key={comment.id} className="flex gap-3 animate-in fade-in">
+                                    <Avatar className="h-7 w-7">
+                                        <AvatarImage src={comment.author?.profilePictureUrl || undefined} />
+                                        <AvatarFallback className="bg-background">{comment.author?.nickname?.[0]?.toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="bg-muted/50 rounded-2xl px-4 py-2 inline-block max-w-full border border-border">
+                                            <p className="text-xs font-bold text-foreground mb-0.5">@{comment.author?.nickname || 'user'}</p>
+                                            <p className="text-sm text-foreground break-words">{comment.text}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            ))
+                        )}
+                    </div>
+
+                    {userProfile && (
+                        <div className="p-4 bg-muted/10 border-t border-border">
+                            <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
+                                 <Avatar className="h-8 w-8 self-start mt-1">
+                                    <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
+                                    <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <Textarea 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Добавить комментарий..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleCommentSubmit(e as any);
+                                        }
+                                    }}
+                                    className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
+                                    rows={1}
+                                />
+                                <button
+                                    type="submit" 
+                                    className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
+                                    disabled={!newComment.trim() || isSubmittingComment}
+                                >
+                                    {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
+                                </button>
+                            </form>
+                        </div>
                     )}
                 </div>
-
-                {userProfile && (
-                    <div className="p-4 bg-muted/10 border-t border-border">
-                        <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
-                             <Avatar className="h-8 w-8 self-start mt-1">
-                                <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
-                                <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <Textarea 
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Добавить комментарий..."
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleCommentSubmit(e as any);
-                                    }
-                                }}
-                                className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
-                                rows={1}
-                            />
-                            <button
-                                type="submit" 
-                                className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
-                                disabled={!newComment.trim() || isSubmittingComment}
-                            >
-                                {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
-                            </button>
-                        </form>
-                    </div>
-                )}
             </div>
-        </div>
+            
+            {isImageExpanded && mediaTypes.every(type => type === 'image') && (
+              <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-50">
+                <button
+                  onClick={() => setIsImageExpanded(false)}
+                  className="absolute top-6 right-6 text-white bg-black/50 px-4 py-2 rounded-md z-50"
+                >
+                  Закрыть
+                </button>
+                <div className="w-full max-w-6xl h-full flex items-center">
+                  <Carousel className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {mediaUrls.map((url, index) => (
+                        <CarouselItem key={index} className="relative w-full h-full">
+                          <Image
+                            src={url}
+                            alt={`Post content ${index + 1}`}
+                            fill
+                            className="object-contain"
+                            priority={index === 0}
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {mediaUrls.length > 1 && (
+                      <>
+                        <CarouselPrevious className="absolute left-6 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/80" />
+                        <CarouselNext className="absolute right-6 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/80" />
+                      </>
+                    )}
+                  </Carousel>
+                </div>
+              </div>
+            )}
+        </>
     );
 }
