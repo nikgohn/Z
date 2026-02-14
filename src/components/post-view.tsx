@@ -163,7 +163,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 className={cn(
                     "cursor-pointer transition-all duration-500 ease-in-out overflow-hidden",
                     isImageExpanded
-                        ? "absolute inset-0 z-10 w-full h-full bg-background"
+                        ? "fixed inset-0 z-50 flex items-center justify-center bg-background"
                         : "relative md:basis-1/2 bg-muted border-r border-border",
                     mediaUrls.length > 0 && !isImageExpanded && "flex items-center justify-center"
                 )}
