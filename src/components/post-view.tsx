@@ -192,6 +192,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         )}
                     </div>
 
+                    {/* caption — now scrolls together with image because parent has overflow */}
                     {post.caption && (
                         <div className="p-6">
                             <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
@@ -320,19 +321,19 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
               >
                 <button
                   onClick={() => setIsImageExpanded(false)}
-                  className="absolute top-6 right-6 z-50 text-white/80 hover:text-white transition-colors"
+                  className="absolute right-4 top-4 z-50 rounded-sm text-white opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white"
                   aria-label="Закрыть"
                 >
-                  <X className="w-8 h-8" />
+                  <X className="h-6 w-6" />
                 </button>
-            
+
                 <button
                   onClick={() => setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length)}
                   className="absolute left-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
                 >
                   ‹
                 </button>
-            
+
                 <div className="w-full max-w-6xl h-[85vh] flex items-center justify-center relative rounded-3xl overflow-hidden">
                   <div className="relative w-full h-full">
                     <Image
@@ -345,7 +346,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     />
                   </div>
                 </div>
-            
+
                 <button
                   onClick={() => setCurrentIndex(i => (i + 1) % mediaUrls.length)}
                   className="absolute right-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
