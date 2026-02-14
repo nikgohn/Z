@@ -149,7 +149,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         <>
             <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
                 <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border">
-                    <div className="relative bg-muted flex-shrink-0 aspect-square w-full">
+                    <div className="relative bg-muted flex-shrink-0 w-full h-[60vh]">
                         {mediaUrls.length > 0 && mediaTypes.every(type => type === 'image') ? (
                             <Carousel className="w-full h-full">
                                 <CarouselContent className="h-full">
@@ -185,7 +185,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     </div>
 
                     {post.caption && (
-                        <div className="p-6 overflow-y-auto comments-scrollbar flex-grow">
+                        <div className="p-6 overflow-y-auto comments-scrollbar flex-1 min-h-0">
                             <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
                                 {post.caption}
                             </p>
@@ -306,7 +306,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </div>
             </div>
             
-            {isImageExpanded && mediaTypes.every(type => type === 'image') && (
+            {isImageExpanded && mediaUrls.length > 0 && (
               <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-in fade-in-50">
                 <button
                   onClick={() => setIsImageExpanded(false)}
