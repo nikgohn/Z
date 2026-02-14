@@ -14,8 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
@@ -32,7 +36,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     const [newComment, setNewComment] = React.useState('');
     const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
 
-    // new: fullscreen state + controlled index
     const [isImageExpanded, setIsImageExpanded] = React.useState(false);
     const [currentIndex, setCurrentIndex] = React.useState(0);
 
@@ -148,8 +151,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             setIsSubmittingComment(false);
         }
     };
-
-    // helper for overlay carousel
+    
     const showImageAt = (index: number) => {
         setCurrentIndex(index);
         setIsImageExpanded(true);
@@ -158,11 +160,9 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     return (
         <>
             <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
-                {/* LEFT: image + caption — whole column is scrollable */}
-                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border overflow-y-auto min-h-0">
-                    {/* image area — aspect-square provides a definite height for Image fill */}
-                    <div className="relative bg-muted flex-shrink-0 aspect-square w-full">
-                        {mediaUrls.length > 0 && mediaTypes.every(t => t === 'image') && (
+                <div className="w-full md:w-1/2 flex flex-col bg-background h-full border-r border-border overflow-y-auto min-h-0 comments-scrollbar">
+                    <div className="relative bg-muted flex-shrink-0 w-full h-[60vh]">
+                        {mediaUrls.length > 0 && mediaTypes.every(t => t === 'image') ? (
                             <div className="w-full h-full relative">
                                 <img
                                   src={mediaUrls[currentIndex]}
@@ -185,13 +185,11 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                   </>
                                 )}
                             </div>
-                        )}
-
-                        {mediaUrls.length === 1 && mediaTypes[0] === 'video' && (
+                        ) : mediaUrls.length === 1 && mediaTypes[0] === 'video' ? (
                             <div className="w-full h-full">
                                 <video src={mediaUrls[0]} className="w-full h-full object-contain" controls autoPlay loop playsInline />
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     {post.caption && (
@@ -203,7 +201,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
-                {/* RIGHT: comments and input */}
                 <div className="w-full md:w-1/2 flex flex-col bg-card h-full">
                      <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
                       {author && (
@@ -288,7 +285,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                  <Avatar className="h-8 w-8 self-start mt-1">
                                     <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
                                     <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
-                                </Avatar>
+                                 </Avatar>
                                 <Textarea 
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
@@ -317,63 +314,46 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
 
             {/* Overlay fullscreen viewer */}
             {isImageExpanded && mediaUrls.length > 0 && (
-                <DialogPrimitive.Root open={isImageExpanded} onOpenChange={setIsImageExpanded}>
-                    <DialogPrimitive.Portal forceMount>
-                        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#31443B]/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-                        <DialogPrimitive.Content
-                            className={cn(
-                                "fixed left-[50%] top-[50%] z-50 h-[90vh] w-full max-w-5xl translate-x-[-50%] translate-y-[-50%] rounded-xl border border-border bg-background shadow-lg",
-                                "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-                            )}
-                        >
-                            <DialogPrimitive.Title className="sr-only">
-                                {`Полноэкранный просмотр: ${post.caption || `изображение ${currentIndex + 1} из ${mediaUrls.length}`}`}
-                            </DialogPrimitive.Title>
-                            <DialogPrimitive.Description className="sr-only">
-                                Галерея изображений для записи. Используйте стрелки для навигации.
-                            </DialogPrimitive.Description>
-                            
-                            <div className="relative h-full w-full rounded-2xl overflow-hidden">
-                                <Image
-                                    src={mediaUrls[currentIndex]}
-                                    alt={`Full screen post media ${currentIndex + 1}`}
-                                    fill
-                                    className="object-contain"
-                                    priority
-                                    unoptimized
-                                />
-                            </div>
+                <Dialog open={isImageExpanded} onOpenChange={setIsImageExpanded}>
+                    <DialogContent className="p-0 border-0 max-w-5xl bg-card h-[90vh] flex items-center justify-center">
+                        <DialogTitle className="sr-only">
+                           {`Полноэкранный просмотр: ${post.caption || `изображение ${currentIndex + 1} из ${mediaUrls.length}`}`}
+                        </DialogTitle>
+                        <DialogDescription className="sr-only">
+                           Галерея изображений для записи. Используйте стрелки для навигации.
+                        </DialogDescription>
+                        
+                        <div className="relative h-full w-full">
+                            <Image
+                                src={mediaUrls[currentIndex]}
+                                alt={`Full screen post media ${currentIndex + 1}`}
+                                fill
+                                className="object-contain"
+                                priority
+                                unoptimized
+                            />
+                        </div>
 
-                            {mediaUrls.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                                        className="absolute left-8 top-1/2 -translate-y-1/2 z-50 rounded-full bg-black/30 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-                                        aria-label="Previous image"
-                                    >
-                                        <ChevronLeft className="h-10 w-10" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                                        className="absolute right-8 top-1/2 -translate-y-1/2 z-50 rounded-full bg-black/30 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-                                        aria-label="Next image"
-                                    >
-                                        <ChevronRight className="h-10 w-10" />
-                                    </button>
-                                </>
-                            )}
-
-                            <DialogPrimitive.Close asChild>
+                        {mediaUrls.length > 1 && (
+                            <>
                                 <button
-                                    className="absolute right-2 top-2 z-50 rounded-sm p-1.5 text-white/80 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-                                    aria-label="Close"
+                                    onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
+                                    className="absolute left-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
+                                    aria-label="Previous image"
                                 >
-                                    <X className="h-5 w-5" />
+                                  ‹
                                 </button>
-                            </DialogPrimitive.Close>
-                        </DialogPrimitive.Content>
-                    </DialogPrimitive.Portal>
-                </DialogPrimitive.Root>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
+                                    className="absolute right-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
+                                    aria-label="Next image"
+                                >
+                                  ›
+                                </button>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
             )}
         </>
     );
