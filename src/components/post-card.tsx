@@ -108,14 +108,14 @@ export function PostCard({ post }: { post: Post }) {
         <Dialog>
             <DialogTrigger asChild>
                 <div className="flex flex-col h-full bg-card rounded-lg overflow-hidden border cursor-pointer transition-transform hover:scale-[1.02]">
-                    <div className={cn("relative aspect-square w-full bg-muted overflow-hidden", mediaUrl && "flex items-center justify-center")}>
+                    <div className={cn("relative aspect-square w-full bg-muted overflow-hidden", !mediaUrl && "items-start justify-start")}>
                         {mediaType === 'image' && mediaUrl ? (
                             <Image src={mediaUrl} alt={post.caption || "Изображение записи"} fill className="object-contain" />
                         ) : mediaType === 'video' && mediaUrl ? (
                             <video src={mediaUrl} className="w-full h-full object-cover" muted loop playsInline />
                         ) : (
                              <div className="p-4 h-full w-full overflow-hidden">
-                                <p className="text-sm text-foreground break-words line-clamp-[12] text-left">
+                                <p className="text-sm text-foreground break-words line-clamp-6 text-left">
                                     {post.caption}
                                 </p>
                             </div>
@@ -124,7 +124,7 @@ export function PostCard({ post }: { post: Post }) {
 
                     <div className="p-3 flex flex-col flex-grow">
                         {mediaUrl && post.caption && (
-                            <p className="font-semibold leading-snug line-clamp-4 text-foreground mb-2 flex-grow text-sm">
+                            <p className="font-semibold leading-snug line-clamp-2 text-foreground mb-2 flex-grow text-sm">
                                 {post.caption}
                             </p>
                         )}
