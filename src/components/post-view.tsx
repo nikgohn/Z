@@ -17,8 +17,7 @@ import { Textarea } from "./ui/textarea";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
-    const mediaTypes = post.mediaTypes || [];
-
+    
     const { user, userProfile } = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -30,7 +29,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     const [newComment, setNewComment] = React.useState('');
     const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
     
-    // State for the animation
     const [isImageExpanded, setIsImageExpanded] = React.useState(false);
     const [currentIndex, setCurrentIndex] = React.useState(0);
 
@@ -147,7 +145,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     };
     
     const handleImageContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Only toggle zoom if the click is on the container itself, not on the control buttons inside it.
         if ((e.target as HTMLElement).closest('button')) {
             return;
         }
@@ -159,12 +156,12 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     return (
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-card border border-border shadow-2xl">
             
-            {/* LEFT SIDE / EXPANDING IMAGE CONTAINER */}
+            {/* IMAGE CONTAINER */}
             <div
                 className={cn(
                     "transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
                     isImageExpanded 
-                        ? "absolute inset-0 z-10 w-full h-full bg-black cursor-zoom-out"
+                        ? "absolute inset-0 z-10 w-full h-full bg-background cursor-zoom-out"
                         : "relative w-full md:w-1/2 bg-muted cursor-zoom-in"
                 )}
                 onClick={handleImageContainerClick}
@@ -176,10 +173,11 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             fill
                             alt={`Post media ${currentIndex + 1}`}
                             className={cn(
-                                "transition-all duration-500 ease-in-out",
+                                "transition-transform duration-500 ease-in-out",
                                 isImageExpanded ? "object-contain" : "object-cover"
                             )}
                             priority
+                            unoptimized
                         />
                         {mediaUrls.length > 1 && (
                             <>
@@ -218,10 +216,20 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         <p className="whitespace-pre-wrap">{post.caption}</p>
                     </div>
                 )}
+                 {isImageExpanded && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsImageExpanded(false); }}
+                        className="absolute top-4 right-4 z-20 text-white/80 hover:text-white transition-colors"
+                        aria-label="Закрыть"
+                    >
+                        <X className="w-8 h-8" />
+                    </button>
+                )}
             </div>
 
             {/* RIGHT SIDE: Details and Comments */}
             <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full", isImageExpanded && "invisible")}>
+                {/* Header with author info */}
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
                     {author && (
                     <>
@@ -273,6 +281,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
+                {/* Caption and Comments */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
                     {post.caption && (
                          <div className="pb-4 border-b border-border">
@@ -304,6 +313,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
+                {/* Comment Input */}
                 {userProfile && (
                     <div className="p-4 bg-muted/10 border-t border-border">
                         <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
