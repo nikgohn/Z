@@ -114,8 +114,8 @@ export function PostCard({ post }: { post: Post }) {
                         ) : mediaType === 'video' && mediaUrl ? (
                             <video src={mediaUrl} className="w-full h-full object-cover" muted loop playsInline />
                         ) : (
-                             <div className="p-4 h-full w-full overflow-y-auto">
-                                <p className="text-sm text-foreground break-words line-clamp-6 text-left">
+                             <div className="p-4 h-full w-full overflow-hidden">
+                                <p className="text-sm text-foreground break-words line-clamp-[12] text-left">
                                     {post.caption}
                                 </p>
                             </div>
@@ -124,7 +124,7 @@ export function PostCard({ post }: { post: Post }) {
 
                     <div className="p-3 flex flex-col flex-grow">
                         {mediaUrl && post.caption && (
-                            <p className="font-semibold leading-tight line-clamp-2 text-foreground mb-2 flex-grow">
+                            <p className="font-semibold leading-snug line-clamp-4 text-foreground mb-2 flex-grow text-sm">
                                 {post.caption}
                             </p>
                         )}
