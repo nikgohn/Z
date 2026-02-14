@@ -161,11 +161,10 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             {/* IMAGE CONTAINER */}
             <div
                 className={cn(
-                    "transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
-                    "cursor-pointer",
+                    "cursor-pointer transition-all duration-300 ease-in-out overflow-hidden",
                     isImageExpanded
                         ? "absolute inset-0 z-10 w-full h-full bg-background"
-                        : "relative w-full basis-1/2 bg-muted"
+                        : "relative w-full md:basis-1/2 bg-muted border-r border-border flex items-center justify-center"
                 )}
                 onClick={handleImageContainerClick}
             >
@@ -176,7 +175,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                             fill
                             alt={`Post media ${currentIndex + 1}`}
                             className={cn(
-                                "transition-all duration-500 ease-in-out",
+                                "transition-all duration-300 ease-in-out",
                                 isImageExpanded ? "object-contain" : "object-cover"
                             )}
                             priority
