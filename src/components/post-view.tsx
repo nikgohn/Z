@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
@@ -319,21 +320,21 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 className="fixed inset-0 z-50 flex items-center justify-center"
                 style={{ backgroundColor: '#40594D' }}
               >
-                <button
+                <DialogPrimitive.Close
                   onClick={() => setIsImageExpanded(false)}
-                  className="absolute right-4 top-4 z-50 rounded-sm text-white opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-white"
-                  aria-label="Закрыть"
+                  className="absolute right-2 top-2 z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
                 >
-                  <X className="h-6 w-6" />
-                </button>
-
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+            
                 <button
                   onClick={() => setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length)}
                   className="absolute left-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
                 >
                   ‹
                 </button>
-
+            
                 <div className="w-full max-w-6xl h-[85vh] flex items-center justify-center relative rounded-3xl overflow-hidden">
                   <div className="relative w-full h-full">
                     <Image
@@ -346,7 +347,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     />
                   </div>
                 </div>
-
+            
                 <button
                   onClick={() => setCurrentIndex(i => (i + 1) % mediaUrls.length)}
                   className="absolute right-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
