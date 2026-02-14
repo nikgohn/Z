@@ -161,26 +161,30 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             {/* IMAGE CONTAINER */}
             <div
                 className={cn(
-                    "cursor-pointer transition-all duration-300 ease-in-out overflow-hidden",
+                    "cursor-pointer transition-all duration-500 ease-in-out overflow-hidden",
                     isImageExpanded
                         ? "absolute inset-0 z-10 w-full h-full bg-background"
-                        : "relative w-full md:basis-1/2 bg-muted border-r border-border flex items-center justify-center"
+                        : "relative md:basis-1/2 bg-muted border-r border-border",
+                    mediaUrls.length > 0 && !isImageExpanded && "flex items-center justify-center"
                 )}
                 onClick={handleImageContainerClick}
             >
                 {mediaUrls.length > 0 ? (
                     <>
-                        <Image
-                            src={mediaUrls[currentIndex]}
-                            fill
-                            alt={`Post media ${currentIndex + 1}`}
-                            className={cn(
-                                "transition-all duration-300 ease-in-out",
-                                isImageExpanded ? "object-contain" : "object-cover"
-                            )}
-                            priority
-                            unoptimized
-                        />
+                        <div className="relative w-full h-full">
+                           <Image
+                                src={mediaUrls[currentIndex]}
+                                fill
+                                alt={`Post media ${currentIndex + 1}`}
+                                className={cn(
+                                    "transition-all duration-500 ease-in-out",
+                                    isImageExpanded ? "object-contain" : "object-cover"
+                                )}
+                                priority
+                                unoptimized
+                            />
+                        </div>
+
                         {mediaUrls.length > 1 && (
                             <>
                                 <button
@@ -221,7 +225,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             </div>
 
             {/* RIGHT SIDE: Details and Comments */}
-            <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full", isImageExpanded && "invisible")}>
+            <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity", isImageExpanded && "opacity-0 invisible")}>
                  {/* Header with author info */}
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
                     {author && (
