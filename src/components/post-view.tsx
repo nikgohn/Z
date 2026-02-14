@@ -14,10 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
-    const mediaUrl = post.mediaUrls && post.mediaUrls[0];
-    const mediaType = post.mediaTypes && post.mediaTypes[0];
+    const mediaUrls = post.mediaUrls || [];
+    const mediaTypes = post.mediaTypes || [];
 
     const { user, userProfile } = useAuth();
     const firestore = useFirestore();
@@ -153,38 +154,43 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
         >
             <div
               className={cn(
-                "relative bg-background transition-all duration-300 overflow-y-auto comments-scrollbar",
+                "relative bg-background transition-all duration-300 flex flex-col",
                 isImageExpanded
                   ? "w-full h-full"
                   : "w-full md:w-1/2 h-full border-r border-border"
               )}
             >
-                {mediaUrl && (
-                    <div 
-                        className={cn(
-                            "relative w-full bg-muted",
-                             mediaType === 'image' && "cursor-pointer",
-                             isImageExpanded ? "h-full" : "aspect-square"
-                        )}
-                         onClick={mediaType === 'image' ? () => setIsImageExpanded(!isImageExpanded) : undefined}
-                    >
-                        {mediaType === 'image' && (
-                            <Image 
-                                src={mediaUrl} 
-                                alt="Контент" 
-                                fill 
-                                className="object-contain" 
-                                priority
-                            />
-                        )}
-                        {mediaType === 'video' && (
-                            <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                        )}
-                    </div>
-                )}
+                <div
+                    className="relative bg-muted flex-shrink-0"
+                    style={{
+                        height: isImageExpanded ? '100%' : 'auto',
+                        aspectRatio: isImageExpanded ? 'auto' : '1'
+                    }}
+                    onClick={mediaUrls.length > 0 ? () => setIsImageExpanded(!isImageExpanded) : undefined}
+                >
+                    {mediaUrls.length > 0 && mediaTypes.every(type => type === 'image') ? (
+                        <Carousel className="w-full h-full cursor-pointer">
+                            <CarouselContent className="h-full">
+                                {mediaUrls.map((url, index) => (
+                                    <CarouselItem key={index} className="relative w-full h-full">
+                                        <Image src={url} alt={`Post content ${index + 1}`} fill className="object-contain" priority={index === 0} />
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            {mediaUrls.length > 1 && (
+                                <>
+                                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80 hover:text-white" />
+                                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/80 hover:text-white" />
+                                </>
+                            )}
+                        </Carousel>
+                    ) : mediaUrls.length === 1 && mediaTypes[0] === 'video' ? (
+                        <video src={mediaUrls[0]} className="w-full h-full object-contain" controls autoPlay loop playsInline />
+                    ) : null}
+                </div>
 
                 {post.caption && !isImageExpanded && (
-                    <div className="p-6">
+                    <div className="p-6 overflow-y-auto comments-scrollbar flex-grow">
                         <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
                             {post.caption}
                         </p>
