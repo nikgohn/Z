@@ -9,9 +9,22 @@ import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
-import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, orderBy, onSnapshot, Timestamp, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+    doc,
+    updateDoc,
+    arrayUnion,
+    arrayRemove,
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    Timestamp,
+    getDoc,
+    addDoc,
+    serverTimestamp
+} from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 
@@ -25,8 +38,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
 
     const [isLiked, setIsLiked] = React.useState(false);
     const [likeCount, setLikeCount] = React.useState(post.likedBy?.length ?? 0);
-    const [comments, setComments] = React.useState<Comment[]>([]);
-    const [commentsLoading, setCommentsLoading] = React.useState(true);
     const [newComment, setNewComment] = React.useState('');
     const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
     const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -40,6 +51,35 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     }, [post, user]);
 
     const mediaUrl = mediaUrls[currentIndex] || null;
+
+    // ===== ОТПРАВКА КОММЕНТАРИЯ =====
+    const handleSubmitComment = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newComment.trim() || !user) return;
+
+        try {
+            setIsSubmittingComment(true);
+
+            await addDoc(
+                collection(firestore, "posts", post.id, "comments"),
+                {
+                    text: newComment.trim(),
+                    userId: user.uid,
+                    createdAt: serverTimestamp()
+                }
+            );
+
+            setNewComment('');
+        } catch (error) {
+            toast({
+                title: "Ошибка",
+                description: "Не удалось отправить комментарий",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
 
     return (
         <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-[#40594D] border border-border shadow-2xl">
@@ -68,7 +108,6 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                         />
                     </div>
 
-                    {/* ===== ARROWS ===== */}
                     {mediaUrls.length > 1 && (
                         <>
                             <button
@@ -76,7 +115,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                     e.stopPropagation();
                                     setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length);
                                 }}
-                                className="absolute left-6 top-1/2 -translate-y-1/2 z-30 text-white text-4xl select-none"
+                                className="absolute left-6 top-1/2 -translate-y-1/2 z-30 text-white text-4xl"
                             >
                                 ‹
                             </button>
@@ -86,7 +125,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                     e.stopPropagation();
                                     setCurrentIndex(i => (i + 1) % mediaUrls.length);
                                 }}
-                                className="absolute right-6 top-1/2 -translate-y-1/2 z-30 text-white text-4xl select-none"
+                                className="absolute right-6 top-1/2 -translate-y-1/2 z-30 text-white text-4xl"
                             >
                                 ›
                             </button>
@@ -144,7 +183,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
-                {/* COMMENTS */}
+                {/* CONTENT */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 min-h-0">
                     {post.caption && (
                         <div className="pb-4 border-b border-border">
@@ -158,15 +197,29 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 {/* COMMENT INPUT */}
                 {userProfile && (
                     <div className="p-4 border-t border-border">
-                        <form onSubmit={(e) => e.preventDefault()} className="flex gap-2">
+                        <form onSubmit={handleSubmitComment} className="flex items-center gap-3">
                             <Textarea
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 placeholder="Добавить комментарий..."
                                 className="min-h-[40px] resize-none text-sm"
                             />
-                            <button className="px-4 bg-primary text-primary-foreground rounded-xl">
-                                ОК
+
+                            <button
+                                type="submit"
+                                disabled={!newComment.trim() || isSubmittingComment}
+                                className={cn(
+                                    "flex items-center justify-center rounded-xl transition-all duration-200",
+                                    newComment.trim()
+                                        ? "text-primary hover:scale-110 active:scale-95"
+                                        : "text-muted-foreground cursor-not-allowed"
+                                )}
+                            >
+                                {isSubmittingComment ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <Send className="h-5 w-5 transition-transform duration-200" />
+                                )}
                             </button>
                         </form>
                     </div>
