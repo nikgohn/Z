@@ -11,7 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, orderBy, onSnapshot, Timestamp, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Loader2, X, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import {
@@ -280,32 +280,27 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     </div>
 
                     {userProfile && (
-                        <div className="p-4 bg-muted/10 border-t border-border">
-                            <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
-                                 <Avatar className="h-8 w-8 self-start mt-1">
-                                    <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
-                                    <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
-                                 </Avatar>
-                                <Textarea 
+                        <div className="p-4 border-t border-border">
+                            <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                                <Textarea
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
                                     placeholder="Добавить комментарий..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleCommentSubmit(e as any);
-                                        }
-                                    }}
-                                    className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
-                                    rows={1}
+                                    className="min-h-[40px] resize-none text-sm"
                                 />
                                 <button
-                                    type="submit" 
-                                    className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
+                                    type="submit"
                                     disabled={!newComment.trim() || isSubmittingComment}
+                                    className={cn(
+                                        "flex items-center justify-center px-4 rounded-xl transition-colors",
+                                        newComment.trim()
+                                            ? "text-primary hover:text-primary/80"
+                                            : "text-muted-foreground cursor-not-allowed"
+                                     )}
                                 >
-                                    {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
+                                     {isSubmittingComment ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                                 </button>
+    
                             </form>
                         </div>
                     )}
