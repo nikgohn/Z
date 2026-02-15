@@ -11,7 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, orderBy, onSnapshot, Timestamp, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 
@@ -147,82 +147,61 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     
     const mediaUrl = mediaUrls[currentIndex] || null;
 
-    const handleImageContainerClick = () => {
-        if (mediaUrls.length > 0 && mediaTypes.every(t => t === 'image')) {
-            setIsImageExpanded(!isImageExpanded);
-        }
-    }
-
     return (
-        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-card border border-border shadow-2xl">
-            {/* Image/Video Container */}
-            <div
-              className={cn(
-                "transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
-                "bg-muted",
-                isImageExpanded
-                  ? "fixed inset-0 z-50 bg-black/80"
-                  : "relative md:w-1/2 w-full md:rounded-l-xl md:rounded-tr-none rounded-t-xl",
-                mediaTypes.every(t => t === 'image') && "cursor-pointer"
-              )}
-              onClick={handleImageContainerClick}
-            >
-              {mediaUrl && (
-                <>
-                  <div className="relative w-full h-full">
-                    {mediaTypes[currentIndex] === 'image' ? (
-                      <Image
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-[#40594D] border border-border shadow-2xl">
+            {mediaUrl && mediaTypes[currentIndex] === 'image' ? (
+                <div
+                    className={cn(
+                        "cursor-pointer transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
+                        isImageExpanded
+                            ? "absolute inset-0 z-[100]"
+                            : "md:w-1/2 w-full relative"
+                    )}
+                    onClick={() => setIsImageExpanded(!isImageExpanded)}
+                >
+                    <Image
                         src={mediaUrl}
-                        alt={post.caption || `Post media ${currentIndex + 1}`}
+                        alt={post.caption || "Изображение"}
                         fill
-                        className={cn(
-                          "transition-transform duration-500",
-                          isImageExpanded ? "object-contain scale-100" : "object-cover scale-100"
-                        )}
+                        className="object-contain transition-all duration-500"
                         priority
                         unoptimized
-                      />
-                    ) : mediaTypes[currentIndex] === 'video' ? (
-                       <video src={mediaUrl} className="w-full h-full object-contain" controls autoPlay loop playsInline />
-                    ) : null }
-                  </div>
+                    />
 
-                  {mediaUrls.length > 1 && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length);
-                        }}
-                        className="absolute top-1/2 left-4 -translate-y-1/2 z-50 p-2 bg-black/30 rounded-full text-white hover:bg-black/50"
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentIndex(i => (i + 1) % mediaUrls.length);
-                        }}
-                        className="absolute top-1/2 right-4 -translate-y-1/2 z-50 p-2 bg-black/30 rounded-full text-white hover:bg-black/50"
-                      >
-                        <ChevronRight className="h-6 w-6"/>
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
-               {!mediaUrl && post.caption && (
-                 <div className="p-6">
-                    <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                        {post.caption}
-                    </p>
+                    {mediaUrls.length > 1 && isImageExpanded && (
+                        <>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length);
+                                }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-[101] text-white text-3xl"
+                            >‹</button>
+
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentIndex(i => (i + 1) % mediaUrls.length);
+                                }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-[101] text-white text-3xl"
+                            >›</button>
+                        </>
+                    )}
                 </div>
-               )}
-            </div>
-
-            {/* Details and Comments Container */}
+            ) : (mediaUrl && mediaTypes[currentIndex] === 'video') ? (
+                 <div className="w-full md:w-1/2 flex items-center justify-center bg-muted border-r border-border">
+                    <video src={mediaUrl} className="max-w-full max-h-full" controls autoPlay loop playsInline />
+                </div>
+            ) : (
+                <div className="w-full md:w-1/2 hidden md:flex items-center justify-center bg-muted border-r border-border">
+                    <div className="p-6 text-foreground overflow-y-auto h-full w-full">
+                       <p className="whitespace-pre-wrap">{post.caption}</p>
+                   </div>
+                </div>
+            )}
+            
             <div className={cn(
-                "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-500",
+                "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
                 isImageExpanded && "opacity-0 invisible"
             )}>
                  <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
@@ -280,13 +259,14 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
-                    {mediaUrl && post.caption && (
+                    {post.caption && (
                         <div className="pb-4 border-b border-border">
-                            <p className="text-base whitespace-pre-wrap text-foreground">
+                            <p className="text-base text-foreground whitespace-pre-wrap">
                                 {post.caption}
                             </p>
                         </div>
                     )}
+                    
                     {commentsLoading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
                     ) : comments.length === 0 ? (
@@ -310,27 +290,32 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </div>
 
                 {userProfile && (
-                    <div className="p-4 border-t border-border">
-                        <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                            <Textarea
+                    <div className="p-4 bg-muted/10 border-t border-border">
+                        <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
+                             <Avatar className="h-8 w-8 self-start mt-1">
+                                <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
+                                <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
+                             </Avatar>
+                            <Textarea 
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 placeholder="Добавить комментарий..."
-                                className="min-h-[40px] resize-none text-sm"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleCommentSubmit(e as any);
+                                    }
+                                }}
+                                className="min-h-[40px] max-h-[120px] resize-none bg-transparent border-none focus-visible:ring-0 text-sm py-2"
+                                rows={1}
                             />
                             <button
-                                type="submit"
+                                type="submit" 
+                                className="rounded-xl h-10 bg-primary text-primary-foreground px-4 text-sm font-medium disabled:opacity-50"
                                 disabled={!newComment.trim() || isSubmittingComment}
-                                className={cn(
-                                    "flex items-center justify-center px-4 rounded-xl transition-colors",
-                                    newComment.trim()
-                                        ? "text-primary hover:text-primary/80"
-                                        : "text-muted-foreground cursor-not-allowed"
-                                 )}
                             >
-                                 {isSubmittingComment ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                                {isSubmittingComment ? <Loader2 className="animate-spin h-4 w-4"/> : 'ОК'}
                             </button>
-
                         </form>
                     </div>
                 )}
