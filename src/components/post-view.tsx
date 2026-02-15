@@ -17,7 +17,8 @@ import { Textarea } from "./ui/textarea";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
-    
+    const mediaTypes = post.mediaTypes || [];
+
     const { user, userProfile } = useAuth();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -28,9 +29,8 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
     const [commentsLoading, setCommentsLoading] = React.useState(true);
     const [newComment, setNewComment] = React.useState('');
     const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
-    
-    const [isImageExpanded, setIsImageExpanded] = React.useState(false);
     const [currentIndex, setCurrentIndex] = React.useState(0);
+    const [isImageExpanded, setIsImageExpanded] = React.useState(false);
 
     React.useEffect(() => {
         if (user && post.likedBy) {
@@ -144,148 +144,120 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             setIsSubmittingComment(false);
         }
     };
-    
-    const handleImageContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        // Prevent closing when clicking on carousel navigation buttons
-        if ((e.target as HTMLElement).closest('button')) {
-            return;
-        }
-        if (mediaUrls.length > 0) {
-            setIsImageExpanded(!isImageExpanded);
-        }
-    };
+
+    const mediaUrl = mediaUrls.length > 0 ? mediaUrls[currentIndex] : null;
 
     return (
-        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-card border border-border shadow-2xl">
-            
-            <div
-                className={cn(
-                    "transition-all duration-500 ease-in-out",
-                    mediaUrls.length > 0 && "cursor-pointer",
-                    isImageExpanded
-                    ? "fixed inset-0 z-50 bg-background flex items-center justify-center"
-                    : "relative md:basis-1/2 bg-muted border-r border-border flex items-center justify-center"
-                )}
-                onClick={handleImageContainerClick}
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
+            {mediaUrl && mediaTypes[currentIndex] === 'image' ? (
+                <div
+                    className={cn(
+                        "cursor-pointer transition-all duration-500 ease-in-out bg-black flex items-center justify-center overflow-hidden",
+                        isImageExpanded
+                        ? "absolute inset-0 z-[100] w-full h-full"
+                        : "md:w-1/2 w-full relative"
+                    )}
+                    onClick={() => setIsImageExpanded(!isImageExpanded)}
                 >
-                {mediaUrls.length > 0 ? (
-                    <>
-                    <div
+                    <Image
+                        src={mediaUrl}
+                        alt={post.caption || "Изображение записи"}
+                        fill
                         className={cn(
-                        "transition-transform duration-500 ease-in-out flex items-center justify-center w-full h-full",
-                        isImageExpanded ? "scale-100 p-4" : "scale-100"
+                            "transition-all duration-500",
+                            isImageExpanded ? "object-contain" : "object-cover"
                         )}
-                    >
-                        <Image
-                        src={mediaUrls[currentIndex]}
-                        alt={`Post media ${currentIndex + 1}`}
-                        width={1920}
-                        height={1080}
-                        className="object-contain max-w-full max-h-full"
                         priority
                         unoptimized
-                        />
-                    </div>
-
-                    {mediaUrls.length > 1 && (
-                        isImageExpanded ? (
-                            <>
-                                <button
-                                  onClick={() => setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length)}
-                                  className="absolute left-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
-                                >
-                                  ‹
-                                </button>
-                                <button
-                                  onClick={() => setCurrentIndex(i => (i + 1) % mediaUrls.length)}
-                                  className="absolute right-8 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white transition-colors text-5xl select-none"
-                                >
-                                  ›
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
-                                >
-                                  ‹
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white/70 hover:text-white transition-colors text-3xl select-none"
-                                >
-                                  ›
-                                </button>
-                            </>
-                        )
+                    />
+                     {mediaUrls.length > 1 && (
+                        <>
+                            <button
+                            onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-[101] text-white/70 hover:text-white transition-colors text-3xl select-none"
+                            aria-label="prev"
+                            >‹</button>
+                            <button
+                            onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-[101] text-white/70 hover:text-white transition-colors text-3xl select-none"
+                            aria-label="next"
+                            >›</button>
+                        </>
                     )}
-                    </>
-                ) : (
-                    <div className="p-6 text-foreground overflow-y-auto h-full w-full">
+                </div>
+            ) : mediaUrl && mediaTypes[currentIndex] === 'video' ? (
+                <div className="w-full md:w-1/2 flex items-center justify-center bg-muted border-r border-border">
+                    <video src={mediaUrl} className="max-w-full max-h-full" controls autoPlay loop playsInline />
+                </div>
+            ) : (
+                 <div className="w-full md:w-1/2 hidden md:flex items-center justify-center bg-muted border-r border-border">
+                     <div className="p-6 text-foreground overflow-y-auto h-full w-full">
                         <p className="whitespace-pre-wrap">{post.caption}</p>
                     </div>
-                )}
-            </div>
-
-            {/* RIGHT SIDE: Details and Comments */}
-            <div className={cn("w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity", isImageExpanded && "opacity-0 invisible")}>
-                 {/* Header with author info */}
-                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
-                    {author && (
+                 </div>
+            )}
+            
+            <div className={cn(
+                "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
+                isImageExpanded && mediaTypes[currentIndex] === 'image' && "opacity-0 invisible"
+            )}>
+                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+                  {author && (
                     <>
-                        <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="h-10 w-10 ring-1 ring-border flex-shrink-0">
-                            <AvatarImage src={author.profilePictureUrl || undefined} />
-                            <AvatarFallback className="bg-background text-muted-foreground">
+                          <AvatarImage src={author.profilePictureUrl || undefined} />
+                          <AvatarFallback className="bg-background text-muted-foreground">
                             {author.nickname?.[0].toUpperCase()}
-                            </AvatarFallback>
+                          </AvatarFallback>
                         </Avatar>
+
                         <div className="flex flex-col">
-                            <Link
+                          <Link
                             href={`/profile/${author.nickname}`}
                             className="font-bold text-foreground hover:text-primary transition-colors"
-                            >
+                          >
                             @{author.nickname}
-                            </Link>
-                            <p className="text-xs text-muted-foreground mt-1">
+                          </Link>
+
+                          <p className="text-xs text-muted-foreground mt-1">
                             {post.createdAt
-                                ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
-                                : "только что"}
-                            </p>
+                              ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ru })
+                              : "только что"}
+                          </p>
                         </div>
-                        </div>
-                        <button
+                      </div>
+
+                      <button
                         onClick={handleLike}
                         className={cn(
-                            "flex items-center gap-2 px-2 py-1",
-                            "bg-transparent border-none shadow-none",
-                            "hover:bg-transparent active:bg-transparent",
-                            "focus:outline-none focus-visible:ring-0",
-                            "transition-colors",
-                            isLiked
+                          "flex items-center gap-2 px-2 py-1",
+                          "bg-transparent border-none shadow-none",
+                          "hover:bg-transparent active:bg-transparent",
+                          "focus:outline-none focus-visible:ring-0",
+                          "transition-colors",
+                          isLiked
                             ? "text-primary"
                             : "text-muted-foreground hover:text-foreground"
                         )}
-                        >
+                      >
                         <Heart
-                            className={cn(
+                          className={cn(
                             "h-5 w-5 transition-colors",
                             isLiked && "fill-current"
-                            )}
+                          )}
                         />
                         <span className="text-sm font-semibold">
-                            {likeCount}
+                          {likeCount}
                         </span>
-                        </button>
+                      </button>
                     </>
-                    )}
+                  )}
                 </div>
 
-                {/* Caption and Comments */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
-                    {post.caption && mediaUrls.length > 0 && (
-                         <div className="pb-4 border-b border-border">
+                    {post.caption && (mediaUrl || mediaTypes[0] === 'video') && (
+                        <div className="pb-4 border-b border-border">
                             <p className="text-base text-foreground whitespace-pre-wrap">
                                 {post.caption}
                             </p>
@@ -295,7 +267,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     {commentsLoading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
                     ) : comments.length === 0 ? (
-                        <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
+                         <div className="text-center py-16 text-muted-foreground text-sm">Комментариев пока нет. Будьте первым!</div>
                     ) : (
                         comments.map((comment: Comment) => (
                             <div key={comment.id} className="flex gap-3 animate-in fade-in">
@@ -314,14 +286,13 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                     )}
                 </div>
 
-                {/* Comment Input */}
                 {userProfile && (
                     <div className="p-4 bg-muted/10 border-t border-border">
                         <form onSubmit={handleCommentSubmit} className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border">
-                                <Avatar className="h-8 w-8 self-start mt-1">
+                             <Avatar className="h-8 w-8 self-start mt-1">
                                 <AvatarImage src={userProfile.profilePictureUrl ?? undefined} />
                                 <AvatarFallback>{userProfile.nickname?.[0].toUpperCase()}</AvatarFallback>
-                                </Avatar>
+                             </Avatar>
                             <Textarea 
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
