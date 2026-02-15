@@ -165,9 +165,19 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                                 placeholder="Добавить комментарий..."
                                 className="min-h-[40px] resize-none text-sm"
                             />
-                            <button className="px-4 bg-primary text-primary-foreground rounded-xl">
-                                ОК
+                            <button
+                                type="submit"
+                                disabled={!newComment.trim()}
+                                className={cn(
+                                    "flex items-center justify-center px-4 rounded-xl transition-colors",
+                                    newComment.trim()
+                                        ? "text-primary hover:text-primary/80"
+                                        : "text-muted-foreground cursor-not-allowed"
+                                 )}
+                            >
+                                 <Send className="h-5 w-5" />
                             </button>
+
                         </form>
                     </div>
                 )}
