@@ -11,7 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, orderBy, onSnapshot, Timestamp, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 
@@ -144,62 +144,65 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
             setIsSubmittingComment(false);
         }
     };
-
-    const mediaUrl = mediaUrls.length > 0 ? mediaUrls[currentIndex] : null;
+    
+    const mediaUrl = mediaUrls[currentIndex] || null;
 
     return (
-        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-background border border-border shadow-2xl">
+        <div className="flex flex-col md:flex-row h-[90vh] w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative bg-[#40594D] border border-border shadow-2xl">
             {mediaUrl && mediaTypes[currentIndex] === 'image' ? (
                 <div
                     className={cn(
-                        "cursor-pointer transition-all duration-500 ease-in-out bg-black flex items-center justify-center overflow-hidden",
+                        "cursor-pointer transition-all duration-500 ease-in-out flex items-center justify-center overflow-hidden",
                         isImageExpanded
-                        ? "absolute inset-0 z-[100] w-full h-full"
-                        : "md:w-1/2 w-full relative"
+                            ? "absolute inset-0 z-[100]"
+                            : "md:w-1/2 w-full relative"
                     )}
                     onClick={() => setIsImageExpanded(!isImageExpanded)}
                 >
                     <Image
                         src={mediaUrl}
-                        alt={post.caption || "Изображение записи"}
+                        alt={post.caption || "Изображение"}
                         fill
-                        className={cn(
-                            "transition-all duration-500",
-                            isImageExpanded ? "object-contain" : "object-cover"
-                        )}
+                        className="object-contain transition-all duration-500"
                         priority
                         unoptimized
                     />
-                     {mediaUrls.length > 1 && (
+
+                    {mediaUrls.length > 1 && isImageExpanded && (
                         <>
                             <button
-                            onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length); }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 z-[101] text-white/70 hover:text-white transition-colors text-3xl select-none"
-                            aria-label="prev"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentIndex(i => (i - 1 + mediaUrls.length) % mediaUrls.length);
+                                }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-[101] text-white text-3xl"
                             >‹</button>
+
                             <button
-                            onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => (i + 1) % mediaUrls.length); }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 z-[101] text-white/70 hover:text-white transition-colors text-3xl select-none"
-                            aria-label="next"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentIndex(i => (i + 1) % mediaUrls.length);
+                                }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-[101] text-white text-3xl"
                             >›</button>
                         </>
                     )}
                 </div>
-            ) : mediaUrl && mediaTypes[currentIndex] === 'video' ? (
-                <div className="w-full md:w-1/2 flex items-center justify-center bg-muted border-r border-border">
+            ) : (mediaUrl && mediaTypes[currentIndex] === 'video') ? (
+                 <div className="w-full md:w-1/2 flex items-center justify-center bg-muted border-r border-border">
                     <video src={mediaUrl} className="max-w-full max-h-full" controls autoPlay loop playsInline />
                 </div>
             ) : (
-                 <div className="w-full md:w-1/2 hidden md:flex items-center justify-center bg-muted border-r border-border">
-                     <div className="p-6 text-foreground overflow-y-auto h-full w-full">
-                        <p className="whitespace-pre-wrap">{post.caption}</p>
-                    </div>
-                 </div>
+                <div className="w-full md:w-1/2 hidden md:flex items-center justify-center bg-muted border-r border-border">
+                    <div className="p-6 text-foreground overflow-y-auto h-full w-full">
+                       <p className="whitespace-pre-wrap">{post.caption}</p>
+                   </div>
+                </div>
             )}
             
             <div className={cn(
                 "w-full md:w-1/2 flex flex-col bg-card h-full transition-opacity duration-300",
-                isImageExpanded && mediaTypes[currentIndex] === 'image' && "opacity-0 invisible"
+                isImageExpanded && "opacity-0 invisible"
             )}>
                  <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
                   {author && (
@@ -256,7 +259,7 @@ export function PostView({ post, author }: { post: Post, author: UserProfile | n
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 comments-scrollbar min-h-0">
-                    {post.caption && (mediaUrl || mediaTypes[0] === 'video') && (
+                    {post.caption && (
                         <div className="pb-4 border-b border-border">
                             <p className="text-base text-foreground whitespace-pre-wrap">
                                 {post.caption}
