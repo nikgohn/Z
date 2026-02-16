@@ -6,7 +6,7 @@ import { ru } from 'date-fns/locale';
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth-provider";
 import { useFirestore } from "@/firebase";
 import {
@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Textarea } from "./ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 
 export function PostView({ post, author }: { post: Post, author: UserProfile | null }) {
     const mediaUrls = post.mediaUrls || [];
